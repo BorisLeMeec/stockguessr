@@ -490,15 +490,6 @@ $('btn-copy-img').addEventListener('click', async () => {
   }
 });
 
-$('btn-copy-text').addEventListener('click', async () => {
-  try {
-    await navigator.clipboard.writeText(shareText());
-    flash('SCORE COPIED ✓');
-  } catch {
-    flash('CLIPBOARD BLOCKED');
-  }
-});
-
 window.addEventListener('resize', () => {
   if ($('screen-game').classList.contains('active') && currentData) {
     const round = game.rounds[game.idx];
