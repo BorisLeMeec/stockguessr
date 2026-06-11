@@ -101,6 +101,10 @@ body {
   display: block; height: 100%; width: var(--w);
   background: linear-gradient(90deg, var(--green), var(--red));
 }
+.rounds-row {
+  margin-top: 26px; display: flex; align-items: center; justify-content: center;
+  gap: 16px; animation: cardIn .55s ease .4s backwards;
+}
 .menu-foot { margin-top: 48px; font-size: 11px; letter-spacing: .18em; color: var(--dim); }
 
 /* ════════ GAME ════════ */

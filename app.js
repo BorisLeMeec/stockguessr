@@ -17,7 +17,7 @@ const LEVEL = [
   { name: 'HARD',   pool: Infinity, axis: false, pts: 200 },
 ];
 const TF_PTS = 50;
-const ROUNDS = 10;
+let roundCount = 10; // menu setting: 1 / 5 / 10 / 20
 
 let COMPANIES = [];           // [{t, n}] ranked
 let AVAILABLE = new Set();    // tickers with price data
@@ -37,6 +37,11 @@ async function boot() {
   buildTickerTape();
   document.querySelectorAll('.diff-card').forEach(card =>
     card.addEventListener('click', () => startGame(card.dataset.diff)));
+  document.querySelectorAll('#rounds-pills .tf-pill').forEach(pill =>
+    pill.addEventListener('click', () => {
+      roundCount = +pill.dataset.n;
+      document.querySelectorAll('#rounds-pills .tf-pill').forEach(x => x.classList.toggle('sel', x === pill));
+    }));
 }
 
 function buildTickerTape() {
@@ -54,11 +59,24 @@ const game = { rounds: [], idx: 0, score: 0, max: 0, results: [], diff: null };
 let guess = { company: null, tf: null };
 let currentData = null;
 
+// Scale a 10-question mix to n questions (largest-remainder rounding),
+// so e.g. [2,6,2] at n=5 → [1,3,1] and the proportions hold.
+function levelsFor(mix, n) {
+  const exact = mix.map(m => (m * n) / 10);
+  const counts = exact.map(Math.floor);
+  let left = n - counts.reduce((a, b) => a + b, 0);
+  exact.map((e, i) => [e - counts[i], i])
+    .sort((a, b) => b[0] - a[0])
+    .slice(0, left)
+    .forEach(([, i]) => counts[i]++);
+  const levels = [];
+  counts.forEach((c, lvl) => { for (let i = 0; i < c; i++) levels.push(lvl); });
+  return shuffle(levels);
+}
+
 function startGame(diff) {
   const cfg = DIFFICULTY[diff];
-  const levels = [];
-  cfg.mix.forEach((count, lvl) => { for (let i = 0; i < count; i++) levels.push(lvl); });
-  shuffle(levels);
+  const levels = levelsFor(cfg.mix, roundCount);
 
   // pick a distinct company per round from each question's level pool
   const used = new Set();
@@ -86,7 +104,7 @@ async function loadRound() {
   const round = game.rounds[game.idx];
   guess = { company: null, tf: null };
 
-  $('hud-round').textContent = `ROUND ${String(game.idx + 1).padStart(2, '0')}/${ROUNDS}`;
+  $('hud-round').textContent = `ROUND ${String(game.idx + 1).padStart(2, '0')}/${game.rounds.length}`;
   $('hud-score').textContent = `${game.score} PTS`;
   $('hud-level').textContent = LEVEL[round.lvl].name;
   $('hud-level').style.color = ['var(--green)', 'var(--amber)', 'var(--red)'][round.lvl];
@@ -269,7 +287,7 @@ function submitGuess() {
   $('reveal-tf-mark').className = `rs-mark ${okTf ? 'ok' : 'ko'}`;
   $('reveal-points').textContent = `+${pts}`;
   $('reveal-panel').hidden = false;
-  $('btn-next').textContent = game.idx === ROUNDS - 1 ? 'SEE RESULTS →' : 'NEXT CHART →';
+  $('btn-next').textContent = game.idx === game.rounds.length - 1 ? 'SEE RESULTS →' : 'NEXT CHART →';
   $('btn-next').focus();
 }
 
@@ -280,7 +298,7 @@ function tfLabel(tf, company) {
 
 $('btn-next').addEventListener('click', () => {
   game.idx++;
-  if (game.idx >= ROUNDS) showResults();
+  if (game.idx >= game.rounds.length) showResults();
   else loadRound();
 });
 
@@ -320,9 +338,11 @@ function roundEmoji(r) {
 }
 
 function shareText() {
-  const rows = [game.results.slice(0, 5), game.results.slice(5)]
-    .map(row => row.map(roundEmoji).join('')).join('\n');
-  return `STOCKGUESSR · ${game.diff.label}\n${rows}\n${game.score}/${game.max} PTS — ${$('results-grade').textContent}\nhttps://${SITE}`;
+  const rows = [];
+  for (let i = 0; i < game.results.length; i += 5)
+    rows.push(game.results.slice(i, i + 5).map(roundEmoji).join(''));
+  const grid = rows.join('\n');
+  return `STOCKGUESSR · ${game.diff.label}\n${grid}\n${game.score}/${game.max} PTS — ${$('results-grade').textContent}\nhttps://${SITE}`;
 }
 
 async function buildShareImage() {
@@ -341,7 +361,7 @@ async function buildShareImage() {
   ctx.fillRect(0, 0, S, S);
 
   // decorative chart line from the last round played
-  const series = currentData?.series[game.rounds[ROUNDS - 1].tf];
+  const series = currentData?.series[game.rounds[game.rounds.length - 1].tf];
   if (series) {
     const min = Math.min(...series), max = Math.max(...series), span = (max - min) || 1;
     ctx.lineWidth = 3; ctx.globalAlpha = .28; ctx.shadowBlur = 12;
@@ -389,8 +409,11 @@ async function buildShareImage() {
   ctx.fillStyle = '#d8e0d8';
   ctx.fillText($('results-grade').textContent, S / 2, 650);
 
-  // 10 round squares, 2 rows of 5
-  const cell = 64, gap = 18, rowW = 5 * cell + 4 * gap;
+  // round squares, rows of 5 — smaller cells when more than 10 rounds
+  const n = game.results.length;
+  const cell = n > 10 ? 46 : 64, gap = n > 10 ? 12 : 18;
+  const perRow = Math.min(5, n);
+  const rowW = perRow * cell + (perRow - 1) * gap;
   game.results.forEach((r, i) => {
     const gx = S / 2 - rowW / 2 + (i % 5) * (cell + gap);
     const gy = 730 + Math.floor(i / 5) * (cell + gap);
