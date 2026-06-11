@@ -118,6 +118,8 @@ async function loadRound() {
   $('reveal-panel').hidden = true;
   const input = $('company-input');
   input.value = ''; input.classList.remove('locked'); input.disabled = false;
+  const poolSize = LEVEL[round.lvl].pool;
+  input.placeholder = poolSize === Infinity ? 'any of the 500…' : `one of the top ${poolSize}…`;
   $('ac-list').hidden = true;
   buildTfPills();
   updateSubmit();
@@ -203,8 +205,10 @@ input.addEventListener('input', () => {
   input.classList.remove('locked');
   const q = input.value.trim().toLowerCase();
   if (q.length < 1) { acList.hidden = true; updateSubmit(); return; }
+  // only companies in this question's pool are valid answers
+  const pool = COMPANIES.slice(0, Math.min(LEVEL[game.rounds[game.idx].lvl].pool, COMPANIES.length));
   const starts = [], contains = [];
-  for (const c of COMPANIES) {
+  for (const c of pool) {
     const n = c.n.toLowerCase(), t = c.t.toLowerCase();
     if (n.startsWith(q) || t.startsWith(q)) starts.push(c);
     else if (n.includes(q)) contains.push(c);
