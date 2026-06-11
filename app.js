@@ -435,30 +435,50 @@ async function buildShareImage() {
 async function prepareShare() {
   shareBlob = await buildShareImage();
   $('share-img').src = URL.createObjectURL(shareBlob);
+  const file = new File([shareBlob], 'stockguessr-score.png', { type: 'image/png' });
+  $('btn-share').hidden = !navigator.canShare?.({ files: [file] });
+  $('btn-x').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText());
 }
 
-$('btn-share').addEventListener('click', async () => {
+function flash(msg) {
   const feedback = $('share-feedback');
-  const text = shareText();
-  const file = shareBlob && new File([shareBlob], 'stockguessr-score.png', { type: 'image/png' });
+  feedback.textContent = msg;
+  clearTimeout(flash.t);
+  flash.t = setTimeout(() => { feedback.innerHTML = '&nbsp;'; }, 2500);
+}
+
+// native share sheet — mobile / supporting browsers only
+$('btn-share').addEventListener('click', async () => {
+  const file = new File([shareBlob], 'stockguessr-score.png', { type: 'image/png' });
   try {
-    if (file && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ files: [file], text });
-      feedback.textContent = 'SHARED ✓';
-      return;
-    }
+    await navigator.share({ files: [file], text: shareText() });
+    flash('SHARED ✓');
   } catch (e) {
-    if (e.name === 'AbortError') return; // user closed the share sheet
+    if (e.name !== 'AbortError') flash('SHARE FAILED — TRY COPY IMAGE');
   }
-  // desktop fallback: text+link to clipboard, image as download
-  try { await navigator.clipboard.writeText(text); } catch { /* clipboard blocked */ }
-  if (shareBlob) {
+});
+
+$('btn-copy-img').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': shareBlob })]);
+    flash('IMAGE IN CLIPBOARD — PASTE IT ANYWHERE ✓');
+  } catch {
+    // browser without image clipboard (e.g. Firefox): download instead
     const a = document.createElement('a');
     a.href = $('share-img').src;
     a.download = 'stockguessr-score.png';
     a.click();
+    flash('CLIPBOARD BLOCKED — IMAGE DOWNLOADED ✓');
   }
-  feedback.textContent = 'SCORE COPIED · IMAGE DOWNLOADED ✓';
+});
+
+$('btn-copy-text').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(shareText());
+    flash('SCORE COPIED ✓');
+  } catch {
+    flash('CLIPBOARD BLOCKED');
+  }
 });
 
 window.addEventListener('resize', () => {
