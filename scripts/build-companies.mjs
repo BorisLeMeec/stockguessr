@@ -22,7 +22,12 @@ const rows = csv.trim().split('\n').slice(1).map(line => {
     else cur += ch;
   }
   fields.push(cur);
-  return { symbol: fields[0], name: fields[1] };
+  return {
+    symbol: fields[0],
+    name: fields[1],
+    sector: fields[2],
+    founded: (fields[7]?.match(/\d{4}/) || [null])[0], // "1888 (as ...)" → 1888
+  };
 });
 
 const bySymbol = new Map(rows.map(r => [r.symbol, r]));
@@ -36,6 +41,8 @@ ranked.push(...bySymbol.values());
 const companies = ranked.map(r => ({
   t: r.symbol.replace('.', '-'), // Yahoo uses BRK-B style
   n: r.name,
+  s: r.sector,
+  f: r.founded ? +r.founded : null,
 }));
 
 mkdirSync(new URL('../data', import.meta.url), { recursive: true });

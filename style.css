@@ -120,6 +120,20 @@ body {
 .chart-stage { padding: 28px 0 18px; }
 .chart-frame { position: relative; }
 #chart { display: block; width: 100%; height: clamp(260px, 42vh, 420px); }
+.intel-card {
+  position: absolute; top: 14px; right: 14px; z-index: 5;
+  background: rgba(10,12,10,.88); border: 1px solid var(--amber);
+  padding: 12px 16px; max-width: 200px;
+  display: flex; flex-direction: column; gap: 6px;
+  box-shadow: 0 0 24px -8px rgba(255,194,75,.35);
+  animation: cardIn .5s ease .3s backwards;
+}
+.intel-card[hidden] { display: none; }
+.intel-label { font-size: 9px; letter-spacing: .26em; color: var(--amber); }
+.intel-row { font-size: 13px; color: var(--txt); }
+.intel-row b { color: var(--amber); font-weight: 600; }
+.intel-sector { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; }
+
 .chart-corners i {
   position: absolute; width: 14px; height: 14px; border: 1px solid var(--dim);
 }

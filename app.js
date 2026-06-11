@@ -99,6 +99,14 @@ async function loadRound() {
   buildTfPills();
   updateSubmit();
 
+  // easy questions get an intel card: founded year + sector
+  const easy = round.lvl === 0;
+  $('intel-card').hidden = !(easy && (round.company.f || round.company.s));
+  if (easy) {
+    $('intel-founded').textContent = round.company.f ?? '????';
+    $('intel-sector').textContent = round.company.s ?? '';
+  }
+
   currentData = await fetch(`data/stocks/${round.company.t}.json`).then(r => r.json());
   drawChart(currentData.series[round.tf], LEVEL[round.lvl].axis);
   input.focus();
