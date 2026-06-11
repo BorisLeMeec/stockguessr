@@ -39,11 +39,28 @@ async function boot() {
   buildTickerTape();
   document.querySelectorAll('.diff-card').forEach(card =>
     card.addEventListener('click', () => startGame(card.dataset.diff)));
-  document.querySelectorAll('#rounds-pills .tf-pill').forEach(pill =>
+  // rounds pills exist twice (inline row + mobile settings panel) — keep them in sync
+  const roundPills = document.querySelectorAll('#rounds-pills .tf-pill, #rounds-pills-mobile .tf-pill');
+  roundPills.forEach(pill =>
     pill.addEventListener('click', () => {
       roundCount = +pill.dataset.n;
-      document.querySelectorAll('#rounds-pills .tf-pill').forEach(x => x.classList.toggle('sel', x === pill));
+      roundPills.forEach(x => x.classList.toggle('sel', +x.dataset.n === roundCount));
     }));
+
+  const gear = $('btn-settings'), panel = $('settings-panel');
+  gear.addEventListener('click', () => {
+    panel.hidden = !panel.hidden;
+    gear.classList.toggle('open', !panel.hidden);
+  });
+  // capture phase: a tap that closes the panel must not also hit what's under it
+  document.addEventListener('click', e => {
+    if (!panel.hidden && !panel.contains(e.target) && e.target !== gear) {
+      panel.hidden = true;
+      gear.classList.remove('open');
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, true);
 }
 
 function buildTickerTape() {
