@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <filter id="g" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="#050605"/>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="10.5" fill="none" stroke="#1a1f1a" stroke-width="1.5"/>
+  <g filter="url(#g)" fill="none" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="9,44 19,30 27,37" stroke="#2dff8a"/>
+    <polyline points="27,37 36,46" stroke="#ff3b4f"/>
+    <polyline points="36,46 47,24 55,17" stroke="#2dff8a"/>
+  </g>
+</svg>
