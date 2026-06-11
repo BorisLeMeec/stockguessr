@@ -106,19 +106,22 @@ body {
   gap: 16px; animation: cardIn .55s ease .4s backwards;
 }
 
-/* settings gear — mobile only */
+/* settings gear — mobile only, sits above the difficulty grid */
+.settings-row {
+  display: none; position: relative; z-index: 30;
+  justify-content: flex-start; margin-bottom: 14px;
+  animation: cardIn .55s ease .04s backwards;
+}
 .settings-gear {
-  position: absolute; top: 16px; right: 16px; z-index: 30;
   background: none; border: 1px solid var(--line); color: var(--dim);
   width: 42px; height: 42px; font-size: 20px; cursor: pointer;
   transition: color .2s, border-color .2s, transform .4s;
-  display: none;
 }
 .settings-gear:hover, .settings-gear.open { color: var(--green); border-color: var(--green); transform: rotate(90deg); }
 .settings-panel {
-  position: absolute; top: 66px; right: 16px; z-index: 29;
+  position: absolute; top: 50px; left: 0; z-index: 29;
   background: #090b09; border: 1px solid var(--line);
-  padding: 18px; min-width: 230px;
+  padding: 18px; min-width: 230px; text-align: left;
   display: flex; flex-direction: column; gap: 12px;
   box-shadow: 0 18px 48px -12px rgba(0,0,0,.8);
   animation: cardIn .25s ease both;
@@ -129,7 +132,7 @@ body {
 
 @media (max-width: 700px) {
   #screen-menu .rounds-row { display: none; }
-  .settings-gear { display: block; }
+  .settings-row { display: flex; }
 }
 .menu-foot { margin-top: 48px; font-size: 11px; letter-spacing: .18em; color: var(--dim); }
 

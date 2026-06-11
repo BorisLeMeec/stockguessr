@@ -27,23 +27,26 @@
 
 <!-- ════════ MENU ════════ -->
 <section id="screen-menu" class="screen active">
-  <button class="settings-gear" id="btn-settings" aria-label="Settings">⚙</button>
-  <div class="settings-panel" id="settings-panel" hidden>
-    <p class="settings-title">// SETTINGS</p>
-    <div class="settings-field">
-      <span class="field-label">ROUNDS</span>
-      <div class="tf-pills" id="rounds-pills-mobile">
-        <button class="tf-pill" data-n="1">1</button>
-        <button class="tf-pill" data-n="5">5</button>
-        <button class="tf-pill sel" data-n="10">10</button>
-        <button class="tf-pill" data-n="20">20</button>
-      </div>
-    </div>
-  </div>
   <div class="menu-inner">
     <p class="ticker-tape" id="ticker-tape" aria-hidden="true"></p>
     <h1 class="logo">STOCK<span class="logo-accent">GUESSR</span></h1>
     <p class="tagline">ten charts. <em>no names.</em> trust the line.</p>
+
+    <div class="settings-row">
+      <button class="settings-gear" id="btn-settings" aria-label="Settings">⚙</button>
+      <div class="settings-panel" id="settings-panel" hidden>
+        <p class="settings-title">// SETTINGS</p>
+        <div class="settings-field">
+          <span class="field-label">ROUNDS</span>
+          <div class="tf-pills" id="rounds-pills-mobile">
+            <button class="tf-pill" data-n="1">1</button>
+            <button class="tf-pill" data-n="5">5</button>
+            <button class="tf-pill sel" data-n="10">10</button>
+            <button class="tf-pill" data-n="20">20</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="diff-grid">
       <button class="diff-card" data-diff="easy">
