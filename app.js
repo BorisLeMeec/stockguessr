@@ -21,8 +21,27 @@ const LEVEL = [
 const TF_PTS = 50;
 let roundCount = 10; // menu setting: 1 / 5 / 10 / 20
 
-let COMPANIES = [];           // [{t, n}] ranked
+const MARKETS = {
+  sp500: { dir: 'data/sp500', cur: '$' },
+  cac40: { dir: 'data/cac40', cur: '€' },
+};
+let market = 'sp500';         // menu setting
+const marketCache = {};       // lazy-loaded {companies, available} per market
+
+let COMPANIES = [];           // [{t, n, s, f, c}] ranked by market cap
 let AVAILABLE = new Set();    // tickers with price data
+
+async function loadMarket(m) {
+  if (!marketCache[m]) {
+    const [companies, available] = await Promise.all([
+      fetch(`${MARKETS[m].dir}/companies.json`).then(r => r.json()),
+      fetch(`${MARKETS[m].dir}/available.json`).then(r => r.json()),
+    ]);
+    marketCache[m] = { companies, available: new Set(available) };
+  }
+  COMPANIES = marketCache[m].companies;
+  AVAILABLE = marketCache[m].available;
+}
 
 const $ = id => document.getElementById(id);
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -30,21 +49,23 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 
 /* ─────────── boot ─────────── */
 async function boot() {
-  const [companies, available] = await Promise.all([
-    fetch('data/companies.json').then(r => r.json()),
-    fetch('data/available.json').then(r => r.json()),
-  ]);
-  COMPANIES = companies;
-  AVAILABLE = new Set(available);
+  await loadMarket(market);
   buildTickerTape();
   document.querySelectorAll('.diff-card').forEach(card =>
     card.addEventListener('click', () => startGame(card.dataset.diff)));
-  // rounds pills exist twice (inline row + mobile settings panel) — keep them in sync
+  // settings pills exist twice (inline row + mobile panel) — keep them in sync
   const roundPills = document.querySelectorAll('#rounds-pills .tf-pill, #rounds-pills-mobile .tf-pill');
   roundPills.forEach(pill =>
     pill.addEventListener('click', () => {
       roundCount = +pill.dataset.n;
       roundPills.forEach(x => x.classList.toggle('sel', +x.dataset.n === roundCount));
+    }));
+  const marketPills = document.querySelectorAll('#market-pills .tf-pill, #market-pills-mobile .tf-pill');
+  marketPills.forEach(pill =>
+    pill.addEventListener('click', () => {
+      market = pill.dataset.m;
+      marketPills.forEach(x => x.classList.toggle('sel', x.dataset.m === market));
+      loadMarket(market).then(buildTickerTape); // refresh tape with the chosen market
     }));
 
   const gear = $('btn-settings'), panel = $('settings-panel');
@@ -93,7 +114,8 @@ function levelsFor(mix, n) {
   return shuffle(levels);
 }
 
-function startGame(diff) {
+async function startGame(diff) {
+  await loadMarket(market); // apply the menu's market choice
   const cfg = DIFFICULTY[diff];
   const levels = levelsFor(cfg.mix, roundCount);
 
@@ -108,7 +130,7 @@ function startGame(diff) {
     return { lvl, company, tf: pick(TIMEFRAMES) };
   });
 
-  game.idx = 0; game.score = 0; game.results = []; game.diff = cfg;
+  game.idx = 0; game.score = 0; game.results = []; game.diff = cfg; game.market = market;
   game.max = game.rounds.reduce((s, r) => s + LEVEL[r.lvl].pts + (cfg.guessTf ? TF_PTS : 0), 0);
   show('screen-game');
   loadRound();
@@ -120,6 +142,12 @@ function show(id) {
 }
 
 let viewTf = null; // timeframe currently displayed on the chart
+
+// 2540000000000 → "$2.5T", 354000000000 → "€354B"
+function fmtCap(c, cur) {
+  if (!c) return null;
+  return c >= 1e12 ? `${cur}${(c / 1e12).toFixed(1)}T` : `${cur}${Math.round(c / 1e9)}B`;
+}
 
 async function loadRound() {
   const round = game.rounds[game.idx];
@@ -135,21 +163,25 @@ async function loadRound() {
   $('reveal-panel').hidden = true;
   const input = $('company-input');
   input.value = ''; input.classList.remove('locked'); input.disabled = false;
-  const poolSize = LEVEL[round.lvl].pool;
-  input.placeholder = poolSize === Infinity ? 'any of the 500…' : `one of the top ${poolSize}…`;
+  const poolSize = Math.min(LEVEL[round.lvl].pool, COMPANIES.length);
+  input.placeholder = poolSize === COMPANIES.length ? `any of the ${poolSize}…` : `one of the top ${poolSize}…`;
   $('ac-list').hidden = true;
   buildTfPills();
   updateSubmit();
 
-  // clue card: every question in an Easy game, easy-level questions elsewhere
-  const easy = game.diff === DIFFICULTY.easy || round.lvl === 0;
-  $('intel-card').hidden = !(easy && (round.company.f || round.company.s));
-  if (easy) {
-    $('intel-founded').textContent = round.company.f ?? '????';
-    $('intel-sector').textContent = round.company.s ?? '';
-  }
+  // clue card: founded+sector for easy contexts, market cap up to medium contexts
+  const showId = game.diff === DIFFICULTY.easy || round.lvl === 0;
+  const showCap = game.diff === DIFFICULTY.easy || game.diff === DIFFICULTY.medium || round.lvl <= 1;
+  const cap = fmtCap(round.company.c, MARKETS[game.market].cur);
+  $('intel-founded').parentElement.style.display = showId && round.company.f ? '' : 'none';
+  $('intel-sector').style.display = showId && round.company.s ? '' : 'none';
+  $('intel-cap').parentElement.style.display = showCap && cap ? '' : 'none';
+  $('intel-card').hidden = !((showId && (round.company.f || round.company.s)) || (showCap && cap));
+  $('intel-founded').textContent = round.company.f ?? '';
+  $('intel-sector').textContent = round.company.s ?? '';
+  $('intel-cap').textContent = cap ?? '';
 
-  currentData = await fetch(`data/stocks/${round.company.t}.json`).then(r => r.json());
+  currentData = await fetch(`${MARKETS[game.market].dir}/stocks/${round.company.t}.json`).then(r => r.json());
   drawChart(currentData.series[viewTf], LEVEL[round.lvl].axis);
   input.focus();
 }

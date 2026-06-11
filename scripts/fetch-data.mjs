@@ -3,11 +3,12 @@
 // Resumable: skips tickers that already have a JSON file in data/stocks/.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 
+const MARKET = process.argv[2] || 'sp500'; // sp500 | cac40
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36';
-const OUT = new URL('../data/stocks/', import.meta.url);
+const OUT = new URL(`../data/${MARKET}/stocks/`, import.meta.url);
 mkdirSync(OUT, { recursive: true });
 
-const companies = JSON.parse(readFileSync(new URL('../data/companies.json', import.meta.url), 'utf8'));
+const companies = JSON.parse(readFileSync(new URL(`../data/${MARKET}/companies.json`, import.meta.url), 'utf8'));
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -87,5 +88,5 @@ console.log(`Done: ${ok} ok, ${failed.length} failed${failed.length ? ': ' + fai
 
 // Manifest of tickers that actually have data — the game only quizzes these.
 const have = companies.filter(c => existsSync(new URL(`${c.t}.json`, OUT))).map(c => c.t);
-writeFileSync(new URL('../data/available.json', import.meta.url), JSON.stringify(have));
+writeFileSync(new URL(`../data/${MARKET}/available.json`, import.meta.url), JSON.stringify(have));
 console.log(`Manifest: ${have.length} tickers available`);
