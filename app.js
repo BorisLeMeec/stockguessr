@@ -5,11 +5,13 @@ const TIMEFRAMES = ['1D', '3D', '1M', '3M', '1Y', '5Y', 'ALL'];
 
 // Per-game mix of question levels [easy, medium, hard].
 // Question level: easy = top 20 + visible price axis, medium = top 50, hard = everything.
+// guessTf: hard modes hide the timeframe and make you guess it;
+// friendly modes let you browse timeframes freely and only guess the company.
 const DIFFICULTY = {
-  easy:     { label: 'EASY',      mix: [7, 3, 0] },
-  medium:   { label: 'MEDIUM',    mix: [2, 6, 2] },
-  hard:     { label: 'HARD',      mix: [1, 4, 5] },
-  veryhard: { label: 'VERY HARD', mix: [0, 2, 8] },
+  easy:     { label: 'EASY',      mix: [7, 3, 0], guessTf: false },
+  medium:   { label: 'MEDIUM',    mix: [2, 6, 2], guessTf: false },
+  hard:     { label: 'HARD',      mix: [1, 4, 5], guessTf: true },
+  veryhard: { label: 'VERY HARD', mix: [0, 2, 8], guessTf: true },
 };
 const LEVEL = [
   { name: 'EASY',   pool: 20,       axis: true,  pts: 100 },
@@ -90,7 +92,7 @@ function startGame(diff) {
   });
 
   game.idx = 0; game.score = 0; game.results = []; game.diff = cfg;
-  game.max = game.rounds.reduce((s, r) => s + LEVEL[r.lvl].pts + TF_PTS, 0);
+  game.max = game.rounds.reduce((s, r) => s + LEVEL[r.lvl].pts + (cfg.guessTf ? TF_PTS : 0), 0);
   show('screen-game');
   loadRound();
 }
@@ -100,9 +102,12 @@ function show(id) {
   $(id).classList.add('active');
 }
 
+let viewTf = null; // timeframe currently displayed on the chart
+
 async function loadRound() {
   const round = game.rounds[game.idx];
   guess = { company: null, tf: null };
+  viewTf = round.tf;
 
   $('hud-round').textContent = `ROUND ${String(game.idx + 1).padStart(2, '0')}/${game.rounds.length}`;
   $('hud-score').textContent = `${game.score} PTS`;
@@ -126,7 +131,7 @@ async function loadRound() {
   }
 
   currentData = await fetch(`data/stocks/${round.company.t}.json`).then(r => r.json());
-  drawChart(currentData.series[round.tf], LEVEL[round.lvl].axis);
+  drawChart(currentData.series[viewTf], LEVEL[round.lvl].axis);
   input.focus();
 }
 
@@ -242,22 +247,31 @@ function choose(i) {
 
 /* ─────────── timeframe pills ─────────── */
 function buildTfPills() {
+  const round = game.rounds[game.idx];
   const box = $('tf-pills');
   box.innerHTML = '';
+  $('tf-label').textContent = game.diff.guessTf ? '// TIMEFRAME — YOUR GUESS' : '// TIMEFRAME — BROWSE FREELY';
   TIMEFRAMES.forEach(tf => {
     const b = document.createElement('button');
     b.className = 'tf-pill'; b.textContent = tf;
+    if (!game.diff.guessTf && tf === viewTf) b.classList.add('sel');
     b.addEventListener('click', () => {
-      guess.tf = tf;
       [...box.children].forEach(x => x.classList.toggle('sel', x === b));
-      updateSubmit();
+      if (game.diff.guessTf) {
+        guess.tf = tf;
+        updateSubmit();
+      } else {
+        // friendly mode: pills just change the chart view
+        viewTf = tf;
+        if (currentData) drawChart(currentData.series[viewTf], LEVEL[round.lvl].axis);
+      }
     });
     box.appendChild(b);
   });
 }
 
 function updateSubmit() {
-  $('btn-submit').disabled = !(guess.company && guess.tf);
+  $('btn-submit').disabled = !(guess.company && (guess.tf || !game.diff.guessTf));
 }
 
 /* ─────────── submit / reveal ─────────── */
@@ -266,7 +280,7 @@ $('btn-submit').addEventListener('click', submitGuess);
 function submitGuess() {
   const round = game.rounds[game.idx];
   const okCompany = guess.company.t === round.company.t;
-  const okTf = guess.tf === round.tf;
+  const okTf = game.diff.guessTf ? guess.tf === round.tf : null; // null = not part of the puzzle
   const pts = (okCompany ? LEVEL[round.lvl].pts : 0) + (okTf ? TF_PTS : 0);
   game.score += pts;
   game.results.push({ round, okCompany, okTf, pts });
@@ -275,16 +289,20 @@ function submitGuess() {
   $('guess-panel').style.display = 'none';
 
   const verdict = $('reveal-verdict');
-  if (okCompany && okTf) { verdict.textContent = pick(['Absolutely nailed it.', 'The tape never lies.', 'Inside information?']); verdict.className = 'reveal-verdict good'; }
+  if (okCompany && okTf !== false) { verdict.textContent = pick(['Absolutely nailed it.', 'The tape never lies.', 'Inside information?']); verdict.className = 'reveal-verdict good'; }
   else if (okCompany || okTf) { verdict.textContent = pick(['Half right. Half rekt.', 'Close, but the market is cruel.', 'Partial fill.']); verdict.className = 'reveal-verdict mid'; }
   else { verdict.textContent = pick(['Liquidated.', 'The chart says no.', 'Margin call.']); verdict.className = 'reveal-verdict bad'; }
 
   $('reveal-company').textContent = `${round.company.n} (${round.company.t})`;
   $('reveal-company-mark').textContent = okCompany ? '✓' : `✗ ${guess.company.t}`;
   $('reveal-company-mark').className = `rs-mark ${okCompany ? 'ok' : 'ko'}`;
-  $('reveal-tf').textContent = tfLabel(round.tf, round.company);
-  $('reveal-tf-mark').textContent = okTf ? '✓' : `✗ ${guess.tf}`;
-  $('reveal-tf-mark').className = `rs-mark ${okTf ? 'ok' : 'ko'}`;
+  const tfBlock = $('reveal-tf').closest('.rs-block');
+  tfBlock.style.display = okTf === null ? 'none' : '';
+  if (okTf !== null) {
+    $('reveal-tf').textContent = tfLabel(round.tf, round.company);
+    $('reveal-tf-mark').textContent = okTf ? '✓' : `✗ ${guess.tf}`;
+    $('reveal-tf-mark').className = `rs-mark ${okTf ? 'ok' : 'ko'}`;
+  }
   $('reveal-points').textContent = `+${pts}`;
   $('reveal-panel').hidden = false;
   $('btn-next').textContent = game.idx === game.rounds.length - 1 ? 'SEE RESULTS →' : 'NEXT CHART →';
@@ -319,8 +337,8 @@ function showResults() {
     <li style="animation-delay:${i * 60}ms">
       <span class="rl-num">${String(i + 1).padStart(2, '0')}</span>
       <span class="rl-name">${r.round.company.n}</span>
-      <span class="rl-tf">${r.round.tf}</span>
-      <span class="rl-marks"><span class="${r.okCompany ? 'ok' : 'ko'}">${r.okCompany ? '✓' : '✗'}</span> <span class="${r.okTf ? 'ok' : 'ko'}">${r.okTf ? '✓' : '✗'}</span></span>
+      <span class="rl-tf">${r.okTf === null ? '—' : r.round.tf}</span>
+      <span class="rl-marks"><span class="${r.okCompany ? 'ok' : 'ko'}">${r.okCompany ? '✓' : '✗'}</span>${r.okTf === null ? '' : ` <span class="${r.okTf ? 'ok' : 'ko'}">${r.okTf ? '✓' : '✗'}</span>`}</span>
       <span class="rl-pts ${r.pts ? '' : 'zero'}">+${r.pts}</span>
     </li>`).join('');
   $('share-feedback').innerHTML = '&nbsp;';
@@ -334,6 +352,7 @@ const SITE = 'stockguessr.fr';
 let shareBlob = null;
 
 function roundEmoji(r) {
+  if (r.okTf === null) return r.okCompany ? '🟩' : '🟥'; // company-only rounds
   return r.okCompany && r.okTf ? '🟩' : (r.okCompany || r.okTf) ? '🟨' : '🟥';
 }
 
@@ -417,7 +436,8 @@ async function buildShareImage() {
   game.results.forEach((r, i) => {
     const gx = S / 2 - rowW / 2 + (i % 5) * (cell + gap);
     const gy = 730 + Math.floor(i / 5) * (cell + gap);
-    ctx.fillStyle = r.okCompany && r.okTf ? '#2dff8a' : (r.okCompany || r.okTf) ? '#ffc24b' : '#ff3b4f';
+    const emoji = roundEmoji(r);
+    ctx.fillStyle = emoji === '🟩' ? '#2dff8a' : emoji === '🟨' ? '#ffc24b' : '#ff3b4f';
     ctx.globalAlpha = .9;
     ctx.beginPath();
     ctx.roundRect(gx, gy, cell, cell, 8);
@@ -493,7 +513,7 @@ $('btn-copy-img').addEventListener('click', async () => {
 window.addEventListener('resize', () => {
   if ($('screen-game').classList.contains('active') && currentData) {
     const round = game.rounds[game.idx];
-    drawChart(currentData.series[round.tf], LEVEL[round.lvl].axis);
+    drawChart(currentData.series[viewTf], LEVEL[round.lvl].axis);
   }
 });
 
