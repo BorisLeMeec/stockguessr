@@ -124,8 +124,8 @@ async function loadRound() {
   buildTfPills();
   updateSubmit();
 
-  // easy questions get an intel card: founded year + sector
-  const easy = round.lvl === 0;
+  // clue card: every question in an Easy game, easy-level questions elsewhere
+  const easy = game.diff === DIFFICULTY.easy || round.lvl === 0;
   $('intel-card').hidden = !(easy && (round.company.f || round.company.s));
   if (easy) {
     $('intel-founded').textContent = round.company.f ?? '????';
