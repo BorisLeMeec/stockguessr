@@ -436,7 +436,10 @@ async function prepareShare() {
   shareBlob = await buildShareImage();
   $('share-img').src = URL.createObjectURL(shareBlob);
   const file = new File([shareBlob], 'stockguessr-score.png', { type: 'image/png' });
-  $('btn-share').hidden = !navigator.canShare?.({ files: [file] });
+  const canShareFiles = !!navigator.canShare?.({ files: [file] });
+  // show native share if files work, or on touch devices with any share support
+  // (the click handler falls back to text-only sharing)
+  $('btn-share').hidden = !(canShareFiles || (navigator.share && matchMedia('(pointer: coarse)').matches));
   $('btn-x').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText());
 }
 
@@ -451,24 +454,39 @@ function flash(msg) {
 $('btn-share').addEventListener('click', async () => {
   const file = new File([shareBlob], 'stockguessr-score.png', { type: 'image/png' });
   try {
-    await navigator.share({ files: [file], text: shareText() });
+    await navigator.share({ files: [file], title: 'STOCKGUESSR', text: shareText() });
     flash('SHARED ✓');
+    return;
   } catch (e) {
-    if (e.name !== 'AbortError') flash('SHARE FAILED — TRY COPY IMAGE');
+    if (e.name === 'AbortError') return;
+  }
+  // some Android browsers/webviews choke on files+text — retry with text only
+  try {
+    await navigator.share({ title: 'STOCKGUESSR', text: shareText() });
+    flash('SHARED ✓ (TEXT — LONG-PRESS THE IMAGE TO ADD IT)');
+  } catch (e) {
+    if (e.name !== 'AbortError') flash(`SHARE FAILED (${e.name}) — LONG-PRESS THE IMAGE INSTEAD`);
   }
 });
+
+const isTouch = matchMedia('(pointer: coarse)').matches;
 
 $('btn-copy-img').addEventListener('click', async () => {
   try {
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': shareBlob })]);
     flash('IMAGE IN CLIPBOARD — PASTE IT ANYWHERE ✓');
   } catch {
-    // browser without image clipboard (e.g. Firefox): download instead
-    const a = document.createElement('a');
-    a.href = $('share-img').src;
-    a.download = 'stockguessr-score.png';
-    a.click();
-    flash('CLIPBOARD BLOCKED — IMAGE DOWNLOADED ✓');
+    if (isTouch) {
+      // blob downloads are unreliable on mobile; the native gesture works better
+      flash('LONG-PRESS THE IMAGE ABOVE TO SAVE OR SHARE IT');
+    } else {
+      // browser without image clipboard (e.g. Firefox): download instead
+      const a = document.createElement('a');
+      a.href = $('share-img').src;
+      a.download = 'stockguessr-score.png';
+      a.click();
+      flash('CLIPBOARD BLOCKED — IMAGE DOWNLOADED ✓');
+    }
   }
 });
 
