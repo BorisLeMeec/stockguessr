@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
 <title>STOCKGUESSR — ten charts, no names</title>
 <meta name="description" content="Guess the stock and the timeframe from the chart alone. Ten rounds, real market data, no login.">
 <meta property="og:title" content="STOCKGUESSR — Ten charts. No names. Trust the line.">
@@ -64,9 +64,9 @@
 
     <div class="zone-sep"><span data-i18n="train_lbl">TRAIN</span></div>
 
-    <div class="rounds-row-mobile">
+    <div class="rounds-row">
       <span class="field-label" data-i18n="rounds_lbl">// ROUNDS</span>
-      <div class="tf-pills" id="rounds-pills-mobile">
+      <div class="tf-pills" id="rounds-pills">
         <button class="tf-pill" data-n="1">1</button>
         <button class="tf-pill" data-n="5">5</button>
         <button class="tf-pill sel" data-n="10">10</button>
@@ -99,17 +99,6 @@
         <span class="diff-desc" data-i18n="d_veryhard_desc">Pure chaos. Even the quants would sweat.</span>
         <span class="diff-meter"><i style="--w:100%"></i></span>
       </button>
-    </div>
-    <div class="rounds-row">
-      <div class="rr-group">
-        <span class="field-label" data-i18n="rounds_lbl">// ROUNDS</span>
-        <div class="tf-pills" id="rounds-pills">
-          <button class="tf-pill" data-n="1">1</button>
-          <button class="tf-pill" data-n="5">5</button>
-          <button class="tf-pill sel" data-n="10">10</button>
-          <button class="tf-pill" data-n="20">20</button>
-        </div>
-      </div>
     </div>
     <p class="menu-foot" data-i18n="foot">real market data · no login · just vibes</p>
   </div>

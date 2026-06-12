@@ -267,8 +267,7 @@ async function boot() {
   buildTickerTape();
   document.querySelectorAll('.diff-card').forEach(card =>
     card.addEventListener('click', () => startGame(card.dataset.diff)));
-  // rounds pills exist twice (desktop row + mobile row) — keep them in sync
-  const roundPills = document.querySelectorAll('#rounds-pills .tf-pill, #rounds-pills-mobile .tf-pill');
+  const roundPills = document.querySelectorAll('#rounds-pills .tf-pill');
   roundPills.forEach(pill =>
     pill.addEventListener('click', () => {
       roundCount = +pill.dataset.n;
@@ -467,7 +466,6 @@ async function loadRound() {
 
   currentData = await fetch(`${MARKETS[game.market].dir}/stocks/${round.company.t}.json`).then(r => r.json());
   drawChart(currentData.series[viewTf], chartAxis(round));
-  input.focus();
 }
 
 /* ─────────── chart ─────────── */
@@ -567,6 +565,12 @@ input.addEventListener('keydown', e => {
   else if (e.key === 'Escape') acList.hidden = true;
 });
 input.addEventListener('blur', () => setTimeout(() => { acList.hidden = true; }, 120));
+// on-screen keyboards cover the bottom half: pin the input to the top so the
+// suggestion list gets the remaining visible space (300ms ≈ keyboard animation)
+input.addEventListener('focus', () => {
+  if (!matchMedia('(pointer: coarse)').matches) return;
+  setTimeout(() => input.scrollIntoView({ block: 'start', behavior: 'smooth' }), 300);
+});
 
 function paintSel() {
   [...acList.children].forEach((li, i) => li.classList.toggle('sel', i === acSel));
