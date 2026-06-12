@@ -10,8 +10,11 @@ const STR = {
   en: {
     tagline: 'ten charts. <em>no names.</em> trust the line.',
     d_easy: 'Easy', d_easy_desc: 'Mega-caps, prices on the axis. Browse all timeframes freely.',
-    d_medium: 'Medium', d_medium_desc: 'Top 50, the axis goes dark. Timeframes still yours to browse.',
-    d_hard: 'Hard', d_hard_desc: 'All 500 tickers, one frozen chart — and now you guess the timeframe too.',
+    d_medium: 'Medium',
+    d_medium_desc: n => n > 50 ? 'Top 50, the axis goes dark. Timeframes still yours to browse.'
+                              : `All ${n} tickers, the axis goes dark. Timeframes still yours to browse.`,
+    d_hard: 'Hard',
+    d_hard_desc: n => `All ${n} tickers, one frozen chart — and now you guess the timeframe too.`,
     d_veryhard: 'Very Hard', d_veryhard_desc: 'Pure chaos. Even the quants would sweat.',
     foot: 'real market data · no login · just vibes',
     rounds_lbl: '// ROUNDS', market_lbl: '// MARKET', settings: '// SETTINGS',
@@ -47,8 +50,11 @@ const STR = {
   fr: {
     tagline: 'dix graphiques. <em>aucun nom.</em> fais confiance à la courbe.',
     d_easy: 'Facile', d_easy_desc: 'Méga-caps, prix affichés. Explore toutes les périodes librement.',
-    d_medium: 'Moyen', d_medium_desc: "Top 50, l'axe s'éteint. Les périodes restent explorables.",
-    d_hard: 'Difficile', d_hard_desc: 'Les 500 valeurs, un graphique figé — et il faut aussi deviner la période.',
+    d_medium: 'Moyen',
+    d_medium_desc: n => n > 50 ? "Top 50, l'axe s'éteint. Tu peux toujours explorer les périodes."
+                               : `Les ${n} valeurs, l'axe s'éteint. Tu peux toujours explorer les périodes.`,
+    d_hard: 'Difficile',
+    d_hard_desc: n => `Les ${n} valeurs, un graphique figé — et il faut aussi deviner la période.`,
     d_veryhard: 'Très Difficile', d_veryhard_desc: 'Le chaos pur. Même les quants transpireraient.',
     foot: 'vraies données de marché · sans compte · que des vibes',
     rounds_lbl: '// MANCHES', market_lbl: '// MARCHÉ', settings: '// RÉGLAGES',
@@ -61,21 +67,21 @@ const STR = {
     levels: ['FACILE', 'MOYEN', 'DIFFICILE'],
     diffs: { easy: 'FACILE', medium: 'MOYEN', hard: 'DIFFICILE', veryhard: 'TRÈS DIFFICILE' },
     tf_guess: '// PÉRIODE — TON PARI', tf_browse: '// PÉRIODE — EXPLORE LIBREMENT',
-    ph_top: n => `une du top ${n}…`, ph_any: n => `n'importe laquelle des ${n}…`,
+    ph_top: n => `une société du top ${n}…`, ph_any: n => `n'importe laquelle des ${n}…`,
     v_good: ['En plein dans le mille.', 'Le marché ne ment jamais.', "Délit d'initié ?"],
     v_mid: ['À moitié juste. À moitié ruiné.', 'Proche, mais le marché est cruel.', 'Exécution partielle.'],
     v_bad: ['Liquidé.', 'Le graphique dit non.', 'Appel de marge.'],
     next: 'GRAPHIQUE SUIVANT →', see_results: 'VOIR LES RÉSULTATS →',
     tfl: { '1D': '1 jour', '3D': '3 jours', '1M': '1 mois', '3M': '3 mois', '1Y': '1 an', '5Y': '5 ans' },
-    all_time: y => `Depuis toujours (${y})`,
-    grades: [[0.9, "L'Oracle d'Omaha."], [0.7, 'Le Loup de Wall Street.'], [0.5, 'Gérant de portefeuille.'], [0.3, 'Énergie de day trader.'], [0.12, 'Investisseur particulier.'], [0, 'Les ETF. S\'il te plaît.']],
+    all_time: y => `Depuis l'origine (${y})`,
+    grades: [[0.9, "L'Oracle d'Omaha."], [0.7, 'Le Loup de Wall Street.'], [0.5, 'Gérant de portefeuille.'], [0.3, 'Âme de day trader.'], [0.12, 'Investisseur du dimanche.'], [0, 'Les ETF. S\'il te plaît.']],
     f_shared: 'PARTAGÉ ✓', f_shared_txt: "PARTAGÉ ✓ (TEXTE — APPUI LONG SUR L'IMAGE POUR L'AJOUTER)",
     f_fail: n => `ÉCHEC DU PARTAGE (${n}) — APPUI LONG SUR L'IMAGE`,
     f_img: 'IMAGE COPIÉE — COLLE-LA OÙ TU VEUX ✓', f_longpress: "APPUI LONG SUR L'IMAGE POUR L'ENREGISTRER OU LA PARTAGER",
     f_dl: 'PRESSE-PAPIERS BLOQUÉ — IMAGE TÉLÉCHARGÉE ✓',
     sponsor: [
       [0.7, 'Tu lis clairement mieux les graphiques que la moyenne. Mets ça à profit — sans commission.'],
-      [0.4, "Pas mal, l'œil. Imagine si c'étaient de vraies positions."],
+      [0.4, "Joli coup d'œil. Imagine si c'étaient de vraies positions."],
       [0.12, "Lire les graphiques, c'est dur. Les détenir, c'est plus simple — sans commission."],
       [0, "Séance compliquée. Heureusement, c'était gratuit — comme le vrai trading, d'ailleurs."],
     ],
@@ -83,14 +89,37 @@ const STR = {
   },
 };
 
+// Sector names come from the data files in English; map them for French display.
+const SECTOR_FR = {
+  'Information Technology': 'Technologies', 'Health Care': 'Santé', 'Financials': 'Finance',
+  'Consumer Discretionary': 'Consommation discrétionnaire', 'Communication Services': 'Communication',
+  'Industrials': 'Industrie', 'Consumer Staples': 'Consommation de base', 'Energy': 'Énergie',
+  'Utilities': 'Services publics', 'Real Estate': 'Immobilier', 'Materials': 'Matériaux',
+  'Luxury': 'Luxe', 'Cosmetics': 'Cosmétiques', 'Aerospace': 'Aéronautique', 'Pharma': 'Pharma',
+  'Eyewear': 'Optique', 'Industrial Gases': 'Gaz industriels', 'Banking': 'Banque',
+  'Insurance': 'Assurance', 'Construction': 'BTP', 'Software': 'Logiciels',
+  'Building Materials': 'Matériaux de construction', 'Automotive': 'Automobile',
+  'Spirits': 'Spiritueux', 'Electrical Equipment': 'Équipement électrique', 'Defense': 'Défense',
+  'Food': 'Agroalimentaire', 'Advertising': 'Publicité', 'Tires': 'Pneumatiques',
+  'Telecom': 'Télécoms', 'IT Services': 'Services informatiques',
+  'Testing & Certification': 'Certification', 'Semiconductors': 'Semi-conducteurs',
+  'Hotels': 'Hôtellerie', 'Steel': 'Acier', 'Retail': 'Distribution',
+  'Payment Services': 'Paiements', 'Payments': 'Paiements', 'Lab Services': 'Laboratoires',
+  'Media': 'Médias', 'Financial Exchanges': 'Bourses', 'Logistics': 'Logistique',
+  'Sportswear': 'Équipement sportif', 'Chemicals': 'Chimie', 'Pharma & Chemicals': 'Pharma & chimie',
+  'Energy Technology': 'Technologies énergétiques', 'Cables & Grids': 'Câbles & réseaux',
+  'Information Services': "Services d'information", 'Beverages': 'Boissons',
+};
+
 let lang = localStorage.getItem('sg_lang') || (navigator.language?.startsWith('fr') ? 'fr' : 'en');
 const t = key => STR[lang][key];
+const sectorName = s => (lang === 'fr' ? SECTOR_FR[s] ?? s : s);
 
 function applyLang() {
   document.documentElement.lang = lang;
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const v = t(el.dataset.i18n);
-    if (v != null) el.innerHTML = v;
+    if (v != null) el.innerHTML = typeof v === 'function' ? v(COMPANIES.length) : v;
   });
   document.querySelectorAll('#lang-pills .tf-pill, #lang-pills-mobile .tf-pill')
     .forEach(x => x.classList.toggle('sel', x.dataset.l === lang));
@@ -144,6 +173,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 
 /* ─────────── boot ─────────── */
 async function boot() {
+  await loadMarket(market);
   applyLang();
   const langPills = document.querySelectorAll('#lang-pills .tf-pill, #lang-pills-mobile .tf-pill');
   langPills.forEach(pill =>
@@ -152,7 +182,6 @@ async function boot() {
       localStorage.setItem('sg_lang', lang);
       applyLang();
     }));
-  await loadMarket(market);
   buildTickerTape();
   document.querySelectorAll('.diff-card').forEach(card =>
     card.addEventListener('click', () => startGame(card.dataset.diff)));
@@ -168,7 +197,7 @@ async function boot() {
     pill.addEventListener('click', () => {
       market = pill.dataset.m;
       marketPills.forEach(x => x.classList.toggle('sel', x.dataset.m === market));
-      loadMarket(market).then(buildTickerTape); // refresh tape with the chosen market
+      loadMarket(market).then(() => { buildTickerTape(); applyLang(); }); // tape + pool sizes follow the market
     }));
 
   const gear = $('btn-settings'), panel = $('settings-panel');
@@ -281,7 +310,7 @@ async function loadRound() {
   $('intel-cap').parentElement.style.display = showCap && cap ? '' : 'none';
   $('intel-card').hidden = !((showId && (round.company.f || round.company.s)) || (showCap && cap));
   $('intel-founded').textContent = round.company.f ?? '';
-  $('intel-sector').textContent = round.company.s ?? '';
+  $('intel-sector').textContent = sectorName(round.company.s) ?? '';
   $('intel-cap').textContent = cap ?? '';
 
   currentData = await fetch(`${MARKETS[game.market].dir}/stocks/${round.company.t}.json`).then(r => r.json());
