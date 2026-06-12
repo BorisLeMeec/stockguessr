@@ -103,9 +103,9 @@ body {
 }
 .rounds-row {
   margin-top: 26px; display: flex; align-items: center; justify-content: center;
-  gap: 16px; flex-wrap: wrap; animation: cardIn .55s ease .4s backwards;
+  gap: 16px 30px; flex-wrap: wrap; animation: cardIn .55s ease .4s backwards;
 }
-.rr-sep { margin-left: 14px; }
+.rr-group { display: flex; align-items: center; gap: 16px; }
 
 /* settings gear — mobile only, sits above the difficulty grid */
 .settings-row {
