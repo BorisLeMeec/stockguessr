@@ -198,12 +198,6 @@ body {
   #screen-menu .global-row .tf-pill {
     padding: 9px 10px; font-size: 11px; white-space: nowrap;
   }
-}
-/* very narrow phones: squeeze so the settings line still fits */
-@media (max-width: 359px) {
-  #screen-menu .global-row { gap: 12px 14px; }
-  #screen-menu .global-row .tf-pills { gap: 5px; }
-  #screen-menu .global-row .tf-pill { padding: 9px 7px; font-size: 10px; }
   .rounds-row-mobile {
     display: flex; justify-content: center; align-items: center;
     gap: 16px; margin-bottom: 16px;
@@ -219,6 +213,12 @@ body {
   #hint-pills::-webkit-scrollbar { display: none; }
   #hint-pills .btn-hint { flex: 0 0 auto; white-space: nowrap; }
   #btn-submit, .btn-next { align-self: center; }
+}
+/* very narrow phones: squeeze so the settings line still fits */
+@media (max-width: 359px) {
+  #screen-menu .global-row { gap: 12px 14px; }
+  #screen-menu .global-row .tf-pills { gap: 5px; }
+  #screen-menu .global-row .tf-pill { padding: 9px 7px; font-size: 10px; }
 }
 .menu-foot { margin-top: 48px; font-size: 11px; letter-spacing: .18em; color: var(--dim); }
 
