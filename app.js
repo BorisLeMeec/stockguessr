@@ -430,7 +430,7 @@ async function loadRound() {
 
   $('guess-panel').style.display = '';
   $('reveal-panel').hidden = true;
-  const input = $('company-input');
+  const input = $('guess-input');
   input.value = ''; input.classList.remove('locked'); input.disabled = false;
   const poolSize = Math.min(LEVEL[round.lvl].pool, COMPANIES.length);
   input.placeholder = poolSize === COMPANIES.length ? t('ph_any')(poolSize) : t('ph_top')(poolSize);
@@ -528,7 +528,7 @@ function drawChart(series, showAxis) {
 
 /* ─────────── autocomplete ─────────── */
 let acItems = [], acSel = -1;
-const input = document.getElementById('company-input');
+const input = document.getElementById('guess-input');
 const acList = document.getElementById('ac-list');
 
 input.addEventListener('input', () => {

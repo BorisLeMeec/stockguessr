@@ -271,15 +271,19 @@ body {
 .field { display: flex; flex-direction: column; gap: 8px; position: relative; }
 .field-label { font-size: 10px; letter-spacing: .22em; color: var(--dim); }
 
-#company-input {
+#guess-input {
   background: var(--panel); border: 1px solid var(--line); color: var(--txt);
   font-family: var(--mono); font-size: 16px; padding: 13px 16px;
   outline: none; width: 100%; caret-color: var(--green);
   transition: border-color .2s;
 }
-#company-input:focus { border-color: var(--green); box-shadow: 0 0 0 1px rgba(45,255,138,.2); }
-#company-input::placeholder { color: #3a443a; font-style: italic; }
-#company-input.locked { border-color: var(--green); color: var(--green); }
+/* type="search" keeps browser autofill (passwords/cards/addresses) away; undo its native skin */
+#guess-input { -webkit-appearance: none; appearance: none; border-radius: 0; }
+#guess-input::-webkit-search-decoration,
+#guess-input::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
+#guess-input:focus { border-color: var(--green); box-shadow: 0 0 0 1px rgba(45,255,138,.2); }
+#guess-input::placeholder { color: #3a443a; font-style: italic; }
+#guess-input.locked { border-color: var(--green); color: var(--green); }
 
 .ac-list {
   position: absolute; top: 100%; left: 0; right: 0; z-index: 20;
