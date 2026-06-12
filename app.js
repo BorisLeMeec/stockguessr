@@ -20,6 +20,7 @@ const STR = {
     daily_name: 'Daily Challenge', train_lbl: 'TRAIN',
     daily_desc: 'Five charts. Same for everyone. One attempt — bon chance.',
     daily_played: (s, m) => `PLAYED TODAY ✓ ${s}/${m} PTS — new charts at midnight.`,
+    daily_resume: (i, n) => `IN PROGRESS — round ${i}/${n}. Finish what you started.`,
     hints_lbl: '// HINTS',
     hint_names: { tf: 'TIMELINE', s: 'SECTOR', f: 'FOUNDED', c: 'CAP', a: 'PRICES', g: 'COUNTRY' },
     rounds_lbl: '// ROUNDS', market_lbl: '// MARKET', lang_lbl: '// LANG',
@@ -64,6 +65,7 @@ const STR = {
     daily_name: 'Le Défi du Jour', train_lbl: 'ENTRAÎNEMENT',
     daily_desc: 'Cinq graphiques. Les mêmes pour tout le monde. Une seule tentative — bon chance.',
     daily_played: (s, m) => `DÉJÀ JOUÉ AUJOURD'HUI ✓ ${s}/${m} PTS — nouveaux graphiques à minuit.`,
+    daily_resume: (i, n) => `EN COURS — manche ${i}/${n}. On finit ce qu'on a commencé.`,
     hints_lbl: '// INDICES',
     hint_names: { tf: 'TIMELINE', s: 'SECTEUR', f: 'CRÉATION', c: 'CAP', a: 'PRIX', g: 'PAYS' },
     rounds_lbl: '// MANCHES', market_lbl: '// MARCHÉ', lang_lbl: '// LANGUE',
@@ -198,6 +200,24 @@ function dailyRecord() {
     return r && r.date === todayStr() ? r : null;
   } catch { return null; }
 }
+/* mid-game progress, saved after every locked-in round and every hint buy.
+   Survives a refresh — and closes the refresh-to-retry / refresh-to-refund-
+   hints loopholes (each round's verdict is final the moment it's submitted). */
+function dailyRun() {
+  try {
+    const r = JSON.parse(localStorage.getItem(`sg_daily_run_${market}`));
+    return r && r.date === todayStr() ? r : null;
+  } catch { return null; }
+}
+function saveDailyRun() {
+  localStorage.setItem(`sg_daily_run_${game.market}`, JSON.stringify({
+    date: todayStr(),
+    tickers: game.rounds.map(r => r.company.t),
+    score: game.score,
+    results: game.results.map(r => ({ okCompany: r.okCompany, okTf: r.okTf, pts: r.pts })),
+    bought: hints.bought,
+  }));
+}
 function dailyRounds() {
   const date = todayStr();
   const used = new Set();
@@ -223,7 +243,10 @@ function renderDailyCard() {
   $('daily-streak').textContent = `🔥 ${st}`;
   $('daily-num').textContent = `#${dailyNumber()} · ${MARKETS[market].label}`;
   $('daily-card').classList.toggle('played', !!rec);
-  $('daily-desc').textContent = rec ? t('daily_played')(rec.score, rec.max) : t('daily_desc');
+  const run = !rec && dailyRun();
+  $('daily-desc').textContent = rec ? t('daily_played')(rec.score, rec.max)
+    : run ? t('daily_resume')(Math.min(run.results.length + 1, DAILY_LEVELS.length), DAILY_LEVELS.length)
+    : t('daily_desc');
 }
 
 const MARKETS = {
@@ -316,7 +339,7 @@ function countryOf(company) {
   const e = TICKER_COUNTRY[company.t.split('.')[1]];
   return e ? `${e[0]} (${e[1]})` : null;
 }
-let hints = { left: [], spent: 0, rows: null, tfUnlocked: false, axisShown: false };
+let hints = { left: [], spent: 0, rows: null, tfUnlocked: false, axisShown: false, bought: [] };
 const tfIsGuess = () => game.diff.guessTf && !hints.tfUnlocked;
 const chartAxis = round => LEVEL[round.lvl].axis || hints.axisShown;
 
@@ -337,6 +360,7 @@ function renderHintBtns() {
 
 function buyHint(k) {
   hints.left = hints.left.filter(x => x !== k);
+  hints.bought.push(k);
   if (k === 'tf') {
     hints.tfUnlocked = true; // forfeits the +50, pills now just browse
     guess.tf = null;
@@ -352,6 +376,7 @@ function buyHint(k) {
     $('intel-card').hidden = false;
   }
   renderHintBtns();
+  if (game.dailyNum) saveDailyRun(); // a bought hint stays bought across a refresh
 }
 
 // the clue card overlays the chart — fade it on hover (desktop) / tap (mobile)
@@ -399,9 +424,22 @@ async function startGame(diff) {
 
   game.idx = 0; game.score = 0; game.results = []; game.diff = cfg; game.market = market;
   game.max = game.rounds.reduce((s, r) => s + LEVEL[r.lvl].pts + (cfg.guessTf ? TF_PTS : 0), 0);
+
+  // resume a refreshed daily — rounds are deterministic, so only progress is
+  // restored. The ticker check guards against the 06:00 UTC data refresh
+  // changing the playable set mid-run (then the saved run is just dropped).
+  const run = diff === 'daily' ? dailyRun() : null;
+  if (run && run.tickers.join() === game.rounds.map(r => r.company.t).join()) {
+    game.idx = run.results.length;
+    game.score = run.score;
+    game.results = run.results.map((r, i) => ({ ...r, round: game.rounds[i] }));
+    resumeBought = run.bought || [];
+  }
+  if (game.idx >= game.rounds.length) { showResults(); return; } // refreshed on the last reveal
   show('screen-game');
   loadRound();
 }
+let resumeBought = null; // hints to re-apply on the first round after a resume
 
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -419,7 +457,7 @@ function fmtCap(c, cur) {
 async function loadRound() {
   const round = game.rounds[game.idx];
   guess = { company: null, tf: null };
-  hints = { left: [], spent: 0, rows: null, tfUnlocked: false, axisShown: false }; // before buildTfPills — tfIsGuess reads it
+  hints = { left: [], spent: 0, rows: null, tfUnlocked: false, axisShown: false, bought: [] }; // before buildTfPills — tfIsGuess reads it
   viewTf = round.tf;
 
   $('hud-round').textContent = `${t('round_word')} ${String(game.idx + 1).padStart(2, '0')}/${game.rounds.length}`;
@@ -463,6 +501,10 @@ async function loadRound() {
   ] : [];
   hints.rows = rows;
   renderHintBtns();
+  if (resumeBought) { // re-buy pre-refresh hints (re-charging them — score doesn't hold them yet)
+    resumeBought.filter(k => hints.left.includes(k)).forEach(buyHint);
+    resumeBought = null;
+  }
 
   currentData = await fetch(`${MARKETS[game.market].dir}/stocks/${round.company.t}.json`).then(r => r.json());
   drawChart(currentData.series[viewTf], chartAxis(round));
@@ -689,6 +731,7 @@ function submitGuess() {
   const pts = Math.max(0, base - hints.spent);
   game.score += pts;
   game.results.push({ round, okCompany, okTf, pts });
+  if (game.dailyNum) { hints.bought = []; saveDailyRun(); } // verdict is final — a refresh resumes past it
 
   $('hud-score').textContent = `${game.score} PTS`;
   $('guess-panel').style.display = 'none';
@@ -750,6 +793,7 @@ function showResults() {
   if (game.dailyNum) {
     localStorage.setItem(`sg_daily_${game.market}`,
       JSON.stringify({ date: todayStr(), num: game.dailyNum, score: game.score, max: game.max }));
+    localStorage.removeItem(`sg_daily_run_${game.market}`);
     bumpStreak();
     renderDailyCard();
   }
