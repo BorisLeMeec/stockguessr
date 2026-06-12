@@ -566,26 +566,70 @@ input.addEventListener('keydown', e => {
 });
 input.addEventListener('blur', () => setTimeout(() => { acList.hidden = true; undockInput(); }, 120));
 // on-screen keyboards cover the bottom half: instead of scrolling the page,
-// lift the field out of the flow and pin it over the top of the screen so
-// input + suggestions always sit in the visible strip above the keyboard
+// lift the field out of the flow and float it around mid-chart, over a
+// blurred backdrop, so input + suggestions sit in the strip above the keyboard
 const companyField = input.closest('.field-company');
+const dockBackdrop = document.createElement('div');
+dockBackdrop.className = 'dock-backdrop';
+document.body.appendChild(dockBackdrop);
+let dockTopBase = 0;
+let vvFullH = window.visualViewport?.height ?? innerHeight;
+
+function dockTop() {
+  const vv = window.visualViewport;
+  const h = vv?.height ?? innerHeight;
+  // never lower than 35% of what the keyboard leaves visible
+  // (iOS anchors fixed elements to the layout viewport; offsetTop follows the visual one)
+  return Math.min(dockTopBase, Math.round(h * .35)) + (vv?.offsetTop ?? 0);
+}
 function placeDock() {
   if (!companyField.classList.contains('docked')) return;
-  // iOS anchors fixed elements to the layout viewport; follow the visual one
-  companyField.style.top = (window.visualViewport?.offsetTop ?? 0) + 'px';
+  companyField.style.top = dockTop() + 'px';
 }
-window.visualViewport?.addEventListener('resize', placeDock);
-window.visualViewport?.addEventListener('scroll', placeDock);
+// slide between the field's resting and docked spots instead of teleporting
+function flipDock(mutate) {
+  const from = companyField.getBoundingClientRect();
+  mutate();
+  const to = companyField.getBoundingClientRect();
+  companyField.animate(
+    [{ transform: `translateY(${from.top - to.top}px)` }, { transform: 'none' }],
+    { duration: 240, easing: 'cubic-bezier(.3,.9,.3,1)' });
+}
 function undockInput() {
-  companyField.classList.remove('docked');
-  companyField.style.top = '';
-  companyField.parentElement.style.minHeight = '';
+  if (!companyField.classList.contains('docked')) return;
+  dockBackdrop.classList.remove('show');
+  flipDock(() => {
+    companyField.classList.remove('docked');
+    companyField.style.top = '';
+    companyField.parentElement.style.minHeight = '';
+  });
 }
-input.addEventListener('focus', () => {
+function dockInput() {
+  if (companyField.classList.contains('docked')) return;
   if (!matchMedia('(pointer: coarse)').matches) return;
-  companyField.parentElement.style.minHeight = companyField.offsetHeight + 'px';
-  companyField.classList.add('docked');
-  placeDock();
+  const chart = $('chart').getBoundingClientRect();
+  dockTopBase = Math.max(8, Math.round(chart.top + chart.height / 2));
+  dockBackdrop.classList.add('show');
+  flipDock(() => {
+    companyField.parentElement.style.minHeight = companyField.offsetHeight + 'px';
+    companyField.classList.add('docked');
+    placeDock();
+  });
+}
+input.addEventListener('focus', dockInput);
+window.visualViewport?.addEventListener('scroll', placeDock);
+window.visualViewport?.addEventListener('resize', () => {
+  const vv = window.visualViewport;
+  if (!companyField.classList.contains('docked')) {
+    vvFullH = Math.max(vvFullH, vv.height);
+    // keyboard reopened on an already-focused input (its close button keeps
+    // focus, so no new focus event fires) → dock again
+    if (document.activeElement === input && vv.height < vvFullH - 60) dockInput();
+    return;
+  }
+  // viewport back to (near) full height = keyboard dismissed → go home
+  if (vv.height >= vvFullH - 60) undockInput();
+  else placeDock();
 });
 
 function paintSel() {
@@ -600,6 +644,9 @@ function choose(i) {
   input.classList.add('locked');
   acList.hidden = true;
   updateSubmit();
+  // mobile: selection ends the typing — drop focus so the keyboard hides and
+  // the field undocks (desktop keeps focus so Enter can still submit)
+  if (matchMedia('(pointer: coarse)').matches) input.blur();
 }
 
 /* ─────────── timeframe pills ─────────── */
