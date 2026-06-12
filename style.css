@@ -101,6 +101,49 @@ body {
   display: block; height: 100%; width: var(--w);
   background: linear-gradient(90deg, var(--green), var(--red));
 }
+
+/* global settings (market + lang) — top right, above the daily; desktop only */
+.global-row {
+  display: flex; justify-content: flex-end; gap: 16px 30px; flex-wrap: wrap;
+  margin-bottom: 14px;
+  animation: cardIn .55s ease .02s backwards;
+}
+
+/* separator between the daily and the training zone */
+.zone-sep {
+  display: flex; align-items: center; gap: 14px;
+  margin: 24px 0 16px; color: var(--dim);
+  font-size: 10px; letter-spacing: .3em;
+}
+.zone-sep::before, .zone-sep::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+/* daily challenge — full-width amber card above the grid */
+.daily-card {
+  width: 100%; text-align: left; margin-bottom: 14px;
+  border-color: rgba(255,194,75,.35); animation-delay: .04s;
+}
+.daily-card .diff-num { color: var(--amber); }
+.daily-streak {
+  position: absolute; top: 14px; right: 16px;
+  font-size: 13px; font-weight: 600; letter-spacing: .08em;
+  color: var(--amber); border: 1px solid rgba(255,194,75,.45);
+  padding: 5px 10px;
+  text-shadow: 0 0 10px rgba(255,194,75,.5);
+}
+.daily-streak[hidden] { display: none; }
+.daily-card:hover {
+  border-color: var(--amber);
+  box-shadow: 0 12px 36px -12px rgba(255,194,75,.25);
+}
+.daily-card:hover .diff-name { color: var(--amber); }
+.daily-meter i { background: linear-gradient(90deg, var(--amber), var(--green)); }
+.daily-card.played { cursor: default; opacity: .7; }
+.daily-card.played:hover {
+  transform: none; box-shadow: none;
+  border-color: rgba(255,194,75,.35);
+}
+.daily-card.played:hover .diff-name { color: var(--txt); }
+.daily-card.played .diff-desc { color: var(--amber); }
 .rounds-row {
   margin-top: 26px; display: flex; align-items: center; justify-content: center;
   gap: 16px 30px; flex-wrap: wrap; animation: cardIn .55s ease .4s backwards;
@@ -134,9 +177,26 @@ body {
 .settings-panel .tf-pills { flex-wrap: nowrap; }
 .settings-field { display: flex; flex-direction: column; gap: 8px; }
 
+.rounds-row-mobile { display: none; }
 @media (max-width: 700px) {
   #screen-menu .rounds-row { display: none; }
+  #screen-menu .global-row { display: none; }
   .settings-row { display: flex; }
+  .rounds-row-mobile {
+    display: flex; justify-content: center; align-items: center;
+    gap: 16px; margin-bottom: 16px;
+    animation: cardIn .55s ease .06s backwards;
+  }
+  /* hints: one swipeable line, right-edge fade hints at more */
+  #hint-pills {
+    flex-wrap: nowrap; overflow-x: auto;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    mask-image: linear-gradient(90deg, #000 90%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, #000 90%, transparent);
+  }
+  #hint-pills::-webkit-scrollbar { display: none; }
+  #hint-pills .btn-hint { flex: 0 0 auto; white-space: nowrap; }
+  #btn-submit, .btn-next { align-self: center; }
 }
 .menu-foot { margin-top: 48px; font-size: 11px; letter-spacing: .18em; color: var(--dim); }
 
@@ -151,6 +211,7 @@ body {
 .gh-left, .gh-right { display: flex; gap: 22px; align-items: baseline; }
 .gh-brand { color: var(--dim); }
 .gh-round { color: var(--txt); }
+.gh-market { color: var(--dim); }
 .gh-level { color: var(--amber); }
 .gh-score { color: var(--green); text-shadow: 0 0 12px rgba(45,255,138,.4); }
 
@@ -166,6 +227,10 @@ body {
   animation: cardIn .5s ease .3s backwards;
 }
 .intel-card[hidden] { display: none; }
+/* fade so the chart underneath stays readable — hover on desktop, tap on mobile */
+.intel-card { transition: opacity .25s; cursor: pointer; }
+@media (hover: hover) { .intel-card:hover { opacity: .12; } }
+.intel-card.peek { opacity: .12; }
 .intel-label { font-size: 9px; letter-spacing: .26em; color: var(--amber); }
 .intel-row { font-size: 13px; color: var(--txt); }
 .intel-row b { color: var(--amber); font-weight: 600; }
@@ -220,6 +285,16 @@ body {
   background: rgba(45,255,138,.08); box-shadow: 0 0 14px -4px rgba(45,255,138,.5);
 }
 
+#hint-row[hidden] { display: none; }
+.hint-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-hint {
+  background: none; border: 1px dashed var(--line); color: var(--amber);
+  font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+  padding: 9px 14px; cursor: pointer;
+  transition: border-color .2s, color .2s;
+}
+.btn-hint:hover { border-color: var(--amber); }
+
 .btn-submit {
   margin-top: 4px; align-self: flex-start;
   background: var(--green); border: 0; color: #04140a;
@@ -269,7 +344,7 @@ body {
 }
 .results-score .rs-max { font-size: .35em; color: var(--dim); text-shadow: none; font-weight: 400; }
 
-.results-list { list-style: none; text-align: left; border: 1px solid var(--line); margin-bottom: 32px; }
+.results-list { list-style: none; text-align: left; border: 1px solid var(--line); margin-top: 32px; }
 .results-list li {
   display: flex; align-items: center; gap: 14px;
   padding: 11px 16px; font-size: 13px; border-bottom: 1px solid var(--line);
@@ -290,9 +365,10 @@ body {
   display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
   text-align: left; text-decoration: none;
   border: 1px dashed #3a4435; background: rgba(255,194,75,.03);
-  padding: 14px 18px; margin-bottom: 32px;
+  padding: 14px 18px;
   transition: border-color .2s, background .2s;
 }
+.share-box .sponsor-card { align-self: stretch; }
 .sponsor-card[hidden] { display: none; }
 .sponsor-card:hover { border-color: var(--amber); background: rgba(255,194,75,.07); }
 .sponsor-tag { font-size: 9px; letter-spacing: .24em; color: #8a7a4d; }
@@ -320,4 +396,5 @@ a.btn-submit { display: inline-block; text-decoration: none; line-height: normal
 @media (max-width: 560px) {
   .gh-left, .gh-right { gap: 12px; }
   .gh-brand { display: none; }
+  .game-header { flex-wrap: wrap; row-gap: 4px; }
 }

@@ -17,6 +17,11 @@ const STR = {
     d_hard_desc: n => `All ${n} tickers, one frozen chart — and now you guess the timeframe too.`,
     d_veryhard: 'Very Hard', d_veryhard_desc: 'Pure chaos. Even the quants would sweat.',
     foot: 'real market data · no login · just vibes',
+    daily_name: 'Daily Challenge', train_lbl: 'TRAIN',
+    daily_desc: 'Five charts. Same for everyone. One attempt — make it count.',
+    daily_played: (s, m) => `PLAYED TODAY ✓ ${s}/${m} PTS — new charts at midnight.`,
+    hints_lbl: '// HINTS',
+    hint_names: { tf: 'TIMELINE', s: 'SECTOR', f: 'FOUNDED', c: 'CAP', a: 'PRICES', g: 'COUNTRY' },
     rounds_lbl: '// ROUNDS', market_lbl: '// MARKET', lang_lbl: '// LANG', settings: '// SETTINGS',
     rounds_word: 'ROUNDS', market_word: 'MARKET', lang_word: 'LANGUAGE',
     company_lbl: '// COMPANY', lock: 'LOCK IN GUESS',
@@ -49,24 +54,29 @@ const STR = {
   },
   fr: {
     tagline: 'dix graphiques. <em>aucun nom.</em> fais confiance à la courbe.',
-    d_easy: 'Facile', d_easy_desc: 'Méga-caps, prix affichés. Explore toutes les périodes librement.',
+    d_easy: 'Facile', d_easy_desc: 'Méga-caps, prix affichés. Explore toute la timeline librement.',
     d_medium: 'Moyen',
-    d_medium_desc: n => n > 50 ? "Top 50, l'axe s'éteint. Tu peux toujours explorer les périodes."
-                               : `Les ${n} valeurs, l'axe s'éteint. Tu peux toujours explorer les périodes.`,
+    d_medium_desc: n => n > 50 ? "Top 50, l'axe s'éteint. La timeline reste à toi."
+                               : `Les ${n} valeurs, l'axe s'éteint. La timeline reste à toi.`,
     d_hard: 'Difficile',
-    d_hard_desc: n => `Les ${n} valeurs, un graphique figé — et il faut aussi deviner la période.`,
+    d_hard_desc: n => `Les ${n} valeurs, un graphique figé — et il faut aussi deviner la timeline.`,
     d_veryhard: 'Très Difficile', d_veryhard_desc: 'Le chaos pur. Même les quants transpireraient.',
     foot: 'vraies données de marché · sans compte · que des vibes',
+    daily_name: 'Le Défi du Jour', train_lbl: 'ENTRAÎNEMENT',
+    daily_desc: 'Cinq graphiques. Les mêmes pour tout le monde. Une seule tentative — fais-la compter.',
+    daily_played: (s, m) => `DÉJÀ JOUÉ AUJOURD'HUI ✓ ${s}/${m} PTS — nouveaux graphiques à minuit.`,
+    hints_lbl: '// INDICES',
+    hint_names: { tf: 'TIMELINE', s: 'SECTEUR', f: 'CRÉATION', c: 'CAP', a: 'PRIX', g: 'PAYS' },
     rounds_lbl: '// MANCHES', market_lbl: '// MARCHÉ', lang_lbl: '// LANGUE', settings: '// RÉGLAGES',
     rounds_word: 'MANCHES', market_word: 'MARCHÉ', lang_word: 'LANGUE',
-    company_lbl: '// SOCIÉTÉ', lock: 'VALIDER LE PARI',
+    company_lbl: '// SOCIÉTÉ', lock: 'VALIDER',
     clues: '// INDICES', since: 'DEPUIS',
-    rs_company: 'SOCIÉTÉ', rs_tf: 'PÉRIODE', rs_pts: 'POINTS',
+    rs_company: 'SOCIÉTÉ', rs_tf: 'TIMELINE', rs_pts: 'POINTS',
     session: 'SÉANCE TERMINÉE', share: 'PARTAGER ↗', copy_img: "COPIER L'IMAGE", post_x: 'POSTER SUR 𝕏', again: 'ON REMET ÇA',
     round_word: 'MANCHE',
     levels: ['FACILE', 'MOYEN', 'DIFFICILE'],
     diffs: { easy: 'FACILE', medium: 'MOYEN', hard: 'DIFFICILE', veryhard: 'TRÈS DIFFICILE' },
-    tf_guess: '// PÉRIODE — TON PARI', tf_browse: '// PÉRIODE — EXPLORE LIBREMENT',
+    tf_guess: '// TIMELINE — TON PARI', tf_browse: '// TIMELINE — EXPLORE LIBREMENT',
     ph_top: n => `une société du top ${n}…`, ph_any: n => `n'importe laquelle des ${n}…`,
     v_good: ['En plein dans le mille.', 'Le marché ne ment jamais.', "Délit d'initié ?"],
     v_mid: ['À moitié juste. À moitié ruiné.', 'Proche, mais le marché est cruel.', 'Exécution partielle.'],
@@ -123,6 +133,7 @@ function applyLang() {
   });
   document.querySelectorAll('#lang-pills .tf-pill, #lang-pills-mobile .tf-pill')
     .forEach(x => x.classList.toggle('sel', x.dataset.l === lang));
+  renderDailyCard(); // its copy is language- and market-dependent
 }
 
 // Per-game mix of question levels [easy, medium, hard].
@@ -135,7 +146,7 @@ const DIFFICULTY = {
   hard:     { key: 'hard',     mix: [1, 4, 5], guessTf: true },
   veryhard: { key: 'veryhard', mix: [0, 2, 8], guessTf: true },
 };
-const diffLabel = () => t('diffs')[game.diff.key];
+const diffLabel = () => game.dailyNum ? `DAILY #${game.dailyNum}` : t('diffs')[game.diff.key];
 const LEVEL = [
   { name: 'EASY',   pool: 20,       axis: true,  pts: 100 },
   { name: 'MEDIUM', pool: 50,       axis: false, pts: 150 },
@@ -143,6 +154,79 @@ const LEVEL = [
 ];
 const TF_PTS = 50;
 let roundCount = 10; // menu setting: 1 / 5 / 10 / 20
+
+/* ─────────── daily challenge ───────────
+   Same five charts for everyone on a given day+market, one attempt per day.
+   Companies are picked by hashing date|market|round|ticker and keeping the max,
+   so the pick is independent of list order (caps re-sort daily at 06:00 UTC). */
+const DAILY_LEVELS = [0, 1, 1, 2, 2]; // fixed ramp, easy → hard
+const DAILY_EPOCH = Date.UTC(2026, 5, 11); // day before #1 (2026-06-12)
+
+function hash32(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+// local date: the daily flips at the player's midnight
+const todayStr = () => dateStr(new Date());
+function dailyNumber() {
+  const d = new Date();
+  return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - DAILY_EPOCH) / 864e5);
+}
+function dateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+// streak: consecutive days with at least one daily completed (any market)
+function readStreak() {
+  try { return JSON.parse(localStorage.getItem('sg_streak')); } catch { return null; }
+}
+function bumpStreak() {
+  const s = readStreak(), today = todayStr();
+  if (s?.date === today) return; // another market's daily already counted today
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  const count = s?.date === dateStr(y) ? s.count + 1 : 1;
+  localStorage.setItem('sg_streak', JSON.stringify({ date: today, count }));
+}
+function currentStreak() {
+  const s = readStreak();
+  if (!s) return 0;
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  return s.date === todayStr() || s.date === dateStr(y) ? s.count : 0; // dead streaks show nothing
+}
+
+function dailyRecord() {
+  try {
+    const r = JSON.parse(localStorage.getItem(`sg_daily_${market}`));
+    return r && r.date === todayStr() ? r : null;
+  } catch { return null; }
+}
+function dailyRounds() {
+  const date = todayStr();
+  const used = new Set();
+  return DAILY_LEVELS.map((lvl, i) => {
+    const pool = COMPANIES
+      .slice(0, Math.min(LEVEL[lvl].pool, COMPANIES.length))
+      .filter(c => AVAILABLE.has(c.t) && !used.has(c.t));
+    const list = pool.length ? pool : COMPANIES.filter(c => AVAILABLE.has(c.t) && !used.has(c.t));
+    let company = list[0], best = -1;
+    for (const c of list) {
+      const h = hash32(`${date}|${market}|${i}|${c.t}`);
+      if (h > best) { best = h; company = c; }
+    }
+    used.add(company.t);
+    const tf = TIMEFRAMES[hash32(`${date}|${market}|tf|${company.t}`) % TIMEFRAMES.length];
+    return { lvl, company, tf };
+  });
+}
+function renderDailyCard() {
+  const rec = dailyRecord();
+  const st = currentStreak();
+  $('daily-streak').hidden = !st;
+  $('daily-streak').textContent = `🔥 ${st}`;
+  $('daily-num').textContent = `#${dailyNumber()} · ${MARKETS[market].label}`;
+  $('daily-card').classList.toggle('played', !!rec);
+  $('daily-desc').textContent = rec ? t('daily_played')(rec.score, rec.max) : t('daily_desc');
+}
 
 const MARKETS = {
   sp500: { dir: 'data/sp500', cur: '$', label: 'S&P 500' },
@@ -231,6 +315,66 @@ const game = { rounds: [], idx: 0, score: 0, max: 0, results: [], diff: null };
 let guess = { company: null, tf: null };
 let currentData = null;
 
+/* ─────────── hints (daily only) ───────────
+   The daily is one shared puzzle, so instead of a difficulty pick each hint
+   walks the round down toward easy mode. Strongest-first: unlocking free
+   timeframe browsing forfeits the timeframe's +50 (that IS the price), then
+   the hidden clue rows (sector → founded → cap) and finally the price axis
+   cost HINT_COST each, deducted from what the round earns, floored at 0. */
+const HINT_COST = 25;
+
+// listing country from the Yahoo ticker suffix — only meaningful for
+// multi-country markets (STOXX 50); CAC 40 is all-French, S&P has no suffix
+const TICKER_COUNTRY = {
+  PA: ['🇫🇷', 'FRA'], DE: ['🇩🇪', 'DEU'], AS: ['🇳🇱', 'NLD'], MI: ['🇮🇹', 'ITA'],
+  MC: ['🇪🇸', 'ESP'], BR: ['🇧🇪', 'BEL'], HE: ['🇫🇮', 'FIN'], LS: ['🇵🇹', 'PRT'],
+  IR: ['🇮🇪', 'IRL'], VI: ['🇦🇹', 'AUT'],
+};
+function countryOf(company) {
+  const e = TICKER_COUNTRY[company.t.split('.')[1]];
+  return e ? `${e[0]} (${e[1]})` : null;
+}
+let hints = { left: [], spent: 0, rows: null, tfUnlocked: false, axisShown: false };
+const tfIsGuess = () => game.diff.guessTf && !hints.tfUnlocked;
+const chartAxis = round => LEVEL[round.lvl].axis || hints.axisShown;
+
+function renderHintBtns() {
+  $('hint-row').hidden = !hints.left.length;
+  $('hints-label').textContent = t('hints_lbl');
+  const box = $('hint-pills');
+  box.innerHTML = '';
+  hints.left.forEach(k => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn-hint';
+    b.textContent = `+ ${t('hint_names')[k]} (−${k === 'tf' ? TF_PTS : HINT_COST} PTS)`;
+    b.addEventListener('click', () => buyHint(k));
+    box.appendChild(b);
+  });
+}
+
+function buyHint(k) {
+  hints.left = hints.left.filter(x => x !== k);
+  if (k === 'tf') {
+    hints.tfUnlocked = true; // forfeits the +50, pills now just browse
+    guess.tf = null;
+    buildTfPills();
+    updateSubmit();
+  } else if (k === 'a') {
+    hints.spent += HINT_COST;
+    hints.axisShown = true;
+    if (currentData) drawChart(currentData.series[viewTf], true);
+  } else {
+    hints.spent += HINT_COST;
+    hints.rows[k].el.style.display = '';
+    $('intel-card').hidden = false;
+  }
+  renderHintBtns();
+}
+
+// the clue card overlays the chart — fade it on hover (desktop) / tap (mobile)
+$('intel-card').addEventListener('click', () => $('intel-card').classList.toggle('peek'));
+
 // Scale a 10-question mix to n questions (largest-remainder rounding),
 // so e.g. [2,6,2] at n=5 → [1,3,1] and the proportions hold.
 function levelsFor(mix, n) {
@@ -248,19 +392,28 @@ function levelsFor(mix, n) {
 
 async function startGame(diff) {
   await loadMarket(market); // apply the menu's market choice
-  const cfg = DIFFICULTY[diff];
-  const levels = levelsFor(cfg.mix, roundCount);
+  let cfg;
+  if (diff === 'daily') {
+    if (dailyRecord()) return; // one attempt a day
+    cfg = { key: 'daily', guessTf: true };
+    game.rounds = dailyRounds();
+    game.dailyNum = dailyNumber();
+  } else {
+    cfg = DIFFICULTY[diff];
+    game.dailyNum = null;
+    const levels = levelsFor(cfg.mix, roundCount);
 
-  // pick a distinct company per round from each question's level pool
-  const used = new Set();
-  game.rounds = levels.map(lvl => {
-    const pool = COMPANIES
-      .slice(0, Math.min(LEVEL[lvl].pool, COMPANIES.length))
-      .filter(c => AVAILABLE.has(c.t) && !used.has(c.t));
-    const company = pick(pool.length ? pool : COMPANIES.filter(c => AVAILABLE.has(c.t)));
-    used.add(company.t);
-    return { lvl, company, tf: pick(TIMEFRAMES) };
-  });
+    // pick a distinct company per round from each question's level pool
+    const used = new Set();
+    game.rounds = levels.map(lvl => {
+      const pool = COMPANIES
+        .slice(0, Math.min(LEVEL[lvl].pool, COMPANIES.length))
+        .filter(c => AVAILABLE.has(c.t) && !used.has(c.t));
+      const company = pick(pool.length ? pool : COMPANIES.filter(c => AVAILABLE.has(c.t)));
+      used.add(company.t);
+      return { lvl, company, tf: pick(TIMEFRAMES) };
+    });
+  }
 
   game.idx = 0; game.score = 0; game.results = []; game.diff = cfg; game.market = market;
   game.max = game.rounds.reduce((s, r) => s + LEVEL[r.lvl].pts + (cfg.guessTf ? TF_PTS : 0), 0);
@@ -284,10 +437,12 @@ function fmtCap(c, cur) {
 async function loadRound() {
   const round = game.rounds[game.idx];
   guess = { company: null, tf: null };
+  hints = { left: [], spent: 0, rows: null, tfUnlocked: false, axisShown: false }; // before buildTfPills — tfIsGuess reads it
   viewTf = round.tf;
 
   $('hud-round').textContent = `${t('round_word')} ${String(game.idx + 1).padStart(2, '0')}/${game.rounds.length}`;
   $('hud-score').textContent = `${game.score} PTS`;
+  $('hud-market').textContent = MARKETS[game.market].label;
   $('hud-level').textContent = t('levels')[round.lvl];
   $('hud-level').style.color = ['var(--green)', 'var(--amber)', 'var(--red)'][round.lvl];
 
@@ -305,16 +460,30 @@ async function loadRound() {
   const showId = game.diff === DIFFICULTY.easy || round.lvl === 0;
   const showCap = game.diff === DIFFICULTY.easy || game.diff === DIFFICULTY.medium || round.lvl <= 1;
   const cap = fmtCap(round.company.c, MARKETS[game.market].cur);
-  $('intel-founded').parentElement.style.display = showId && round.company.f ? '' : 'none';
-  $('intel-sector').style.display = showId && round.company.s ? '' : 'none';
-  $('intel-cap').parentElement.style.display = showCap && cap ? '' : 'none';
-  $('intel-card').hidden = !((showId && (round.company.f || round.company.s)) || (showCap && cap));
+  const rows = {
+    s: { el: $('intel-sector'), val: round.company.s, shown: showId },
+    g: { el: $('intel-country'), val: game.market === 'eurostoxx50' ? countryOf(round.company) : null, shown: showCap }, // like cap: up to medium contexts
+    f: { el: $('intel-founded').parentElement, val: round.company.f, shown: showId },
+    c: { el: $('intel-cap').parentElement, val: cap, shown: showCap },
+  };
+  for (const r of Object.values(rows)) r.el.style.display = r.shown && r.val ? '' : 'none';
+  $('intel-card').hidden = !Object.values(rows).some(r => r.shown && r.val);
+  $('intel-card').classList.remove('peek');
   $('intel-founded').textContent = round.company.f ?? '';
   $('intel-sector').textContent = sectorName(round.company.s) ?? '';
+  $('intel-country').textContent = rows.g.val ?? '';
   $('intel-cap').textContent = cap ?? '';
+  // buyable helps — daily only; each one walks the round toward easy mode
+  hints.left = game.dailyNum ? [
+    ...(game.diff.guessTf ? ['tf'] : []),
+    ...['s', 'g', 'f', 'c'].filter(k => !rows[k].shown && rows[k].val),
+    ...(LEVEL[round.lvl].axis ? [] : ['a']),
+  ] : [];
+  hints.rows = rows;
+  renderHintBtns();
 
   currentData = await fetch(`${MARKETS[game.market].dir}/stocks/${round.company.t}.json`).then(r => r.json());
-  drawChart(currentData.series[viewTf], LEVEL[round.lvl].axis);
+  drawChart(currentData.series[viewTf], chartAxis(round));
   input.focus();
 }
 
@@ -435,20 +604,20 @@ function buildTfPills() {
   const round = game.rounds[game.idx];
   const box = $('tf-pills');
   box.innerHTML = '';
-  $('tf-label').textContent = game.diff.guessTf ? t('tf_guess') : t('tf_browse');
+  $('tf-label').textContent = tfIsGuess() ? t('tf_guess') : t('tf_browse');
   TIMEFRAMES.forEach(tf => {
     const b = document.createElement('button');
     b.className = 'tf-pill'; b.textContent = tf;
-    if (!game.diff.guessTf && tf === viewTf) b.classList.add('sel');
+    if (!tfIsGuess() && tf === viewTf) b.classList.add('sel');
     b.addEventListener('click', () => {
       [...box.children].forEach(x => x.classList.toggle('sel', x === b));
-      if (game.diff.guessTf) {
+      if (tfIsGuess()) {
         guess.tf = tf;
         updateSubmit();
       } else {
         // friendly mode: pills just change the chart view
         viewTf = tf;
-        if (currentData) drawChart(currentData.series[viewTf], LEVEL[round.lvl].axis);
+        if (currentData) drawChart(currentData.series[viewTf], chartAxis(round));
       }
     });
     box.appendChild(b);
@@ -456,7 +625,7 @@ function buildTfPills() {
 }
 
 function updateSubmit() {
-  $('btn-submit').disabled = !(guess.company && (guess.tf || !game.diff.guessTf));
+  $('btn-submit').disabled = !(guess.company && (guess.tf || !tfIsGuess()));
 }
 
 /* ─────────── submit / reveal ─────────── */
@@ -465,8 +634,9 @@ $('btn-submit').addEventListener('click', submitGuess);
 function submitGuess() {
   const round = game.rounds[game.idx];
   const okCompany = guess.company.t === round.company.t;
-  const okTf = game.diff.guessTf ? guess.tf === round.tf : null; // null = not part of the puzzle
-  const pts = (okCompany ? LEVEL[round.lvl].pts : 0) + (okTf ? TF_PTS : 0);
+  const okTf = tfIsGuess() ? guess.tf === round.tf : null; // null = not part of the puzzle (browse mode or unlocked)
+  const base = (okCompany ? LEVEL[round.lvl].pts : 0) + (okTf ? TF_PTS : 0);
+  const pts = Math.max(0, base - hints.spent);
   game.score += pts;
   game.results.push({ round, okCompany, okTf, pts });
 
@@ -488,7 +658,7 @@ function submitGuess() {
     $('reveal-tf-mark').textContent = okTf ? '✓' : `✗ ${guess.tf}`;
     $('reveal-tf-mark').className = `rs-mark ${okTf ? 'ok' : 'ko'}`;
   }
-  $('reveal-points').textContent = `+${pts}`;
+  $('reveal-points').textContent = `+${pts}` + (hints.spent && base ? ` (−${hints.spent})` : '');
   $('reveal-panel').hidden = false;
   $('btn-next').textContent = game.idx === game.rounds.length - 1 ? t('see_results') : t('next');
   $('btn-next').focus();
@@ -527,6 +697,12 @@ function renderSponsor() {
 /* ─────────── results ─────────── */
 function showResults() {
   show('screen-results');
+  if (game.dailyNum) {
+    localStorage.setItem(`sg_daily_${game.market}`,
+      JSON.stringify({ date: todayStr(), num: game.dailyNum, score: game.score, max: game.max }));
+    bumpStreak();
+    renderDailyCard();
+  }
   const ratio = game.score / game.max;
   $('results-grade').textContent = t('grades').find(([min]) => ratio >= min)[1];
   $('results-score').textContent = game.score;
@@ -560,7 +736,8 @@ function shareText() {
   for (let i = 0; i < game.results.length; i += 5)
     rows.push(game.results.slice(i, i + 5).map(roundEmoji).join(''));
   const grid = rows.join('\n');
-  return `STOCKGUESSR · ${diffLabel()} · ${MARKETS[game.market].label}\n${grid}\n${game.score}/${game.max} PTS — ${$('results-grade').textContent}\nhttps://${SITE}`;
+  const st = game.dailyNum ? currentStreak() : 0;
+  return `STOCKGUESSR · ${diffLabel()} · ${MARKETS[game.market].label}${st > 1 ? ` · 🔥${st}` : ''}\n${grid}\n${game.score}/${game.max} PTS — ${$('results-grade').textContent}\nhttps://${SITE}`;
 }
 
 async function buildShareImage() {
@@ -612,7 +789,8 @@ async function buildShareImage() {
 
   ctx.font = '500 30px "IBM Plex Mono"';
   ctx.fillStyle = '#ffc24b';
-  ctx.fillText(`— ${diffLabel()} · ${MARKETS[game.market].label} —`, S / 2, 215);
+  const st = game.dailyNum ? currentStreak() : 0;
+  ctx.fillText(`— ${diffLabel()} · ${MARKETS[game.market].label}${st > 1 ? ` · 🔥${st}` : ''} —`, S / 2, 215);
 
   ctx.font = '600 190px "IBM Plex Mono"';
   ctx.fillStyle = '#2dff8a';
@@ -712,7 +890,7 @@ $('btn-copy-img').addEventListener('click', async () => {
 window.addEventListener('resize', () => {
   if ($('screen-game').classList.contains('active') && currentData) {
     const round = game.rounds[game.idx];
-    drawChart(currentData.series[viewTf], LEVEL[round.lvl].axis);
+    drawChart(currentData.series[viewTf], chartAxis(round));
   }
 });
 

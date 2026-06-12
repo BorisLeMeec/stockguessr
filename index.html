@@ -42,15 +42,6 @@
       <div class="settings-panel" id="settings-panel" hidden>
         <p class="settings-title" data-i18n="settings">// SETTINGS</p>
         <div class="settings-field">
-          <span class="field-label" data-i18n="rounds_word">ROUNDS</span>
-          <div class="tf-pills" id="rounds-pills-mobile">
-            <button class="tf-pill" data-n="1">1</button>
-            <button class="tf-pill" data-n="5">5</button>
-            <button class="tf-pill sel" data-n="10">10</button>
-            <button class="tf-pill" data-n="20">20</button>
-          </div>
-        </div>
-        <div class="settings-field">
           <span class="field-label" data-i18n="market_word">MARKET</span>
           <div class="tf-pills" id="market-pills-mobile">
             <button class="tf-pill sel" data-m="sp500">S&amp;P 500</button>
@@ -65,6 +56,44 @@
             <button class="tf-pill" data-l="fr">FR</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div class="global-row">
+      <div class="rr-group">
+        <span class="field-label" data-i18n="market_lbl">// MARKET</span>
+        <div class="tf-pills" id="market-pills">
+          <button class="tf-pill sel" data-m="sp500">S&amp;P 500</button>
+          <button class="tf-pill" data-m="cac40">CAC 40</button>
+          <button class="tf-pill" data-m="eurostoxx50">STOXX 50</button>
+        </div>
+      </div>
+      <div class="rr-group">
+        <span class="field-label" data-i18n="lang_lbl">// LANG</span>
+        <div class="tf-pills" id="lang-pills">
+          <button class="tf-pill" data-l="en">EN</button>
+          <button class="tf-pill" data-l="fr">FR</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="diff-card daily-card" id="daily-card" data-diff="daily">
+      <span class="daily-streak" id="daily-streak" hidden></span>
+      <span class="diff-num">★ DAILY <span id="daily-num"></span></span>
+      <span class="diff-name" data-i18n="daily_name">Daily Challenge</span>
+      <span class="diff-desc" id="daily-desc">Five charts. Same for everyone. One attempt — make it count.</span>
+      <span class="diff-meter daily-meter"><i style="--w:100%"></i></span>
+    </button>
+
+    <div class="zone-sep"><span data-i18n="train_lbl">TRAIN</span></div>
+
+    <div class="rounds-row-mobile">
+      <span class="field-label" data-i18n="rounds_lbl">// ROUNDS</span>
+      <div class="tf-pills" id="rounds-pills-mobile">
+        <button class="tf-pill" data-n="1">1</button>
+        <button class="tf-pill" data-n="5">5</button>
+        <button class="tf-pill sel" data-n="10">10</button>
+        <button class="tf-pill" data-n="20">20</button>
       </div>
     </div>
 
@@ -104,21 +133,6 @@
           <button class="tf-pill" data-n="20">20</button>
         </div>
       </div>
-      <div class="rr-group">
-        <span class="field-label" data-i18n="market_lbl">// MARKET</span>
-        <div class="tf-pills" id="market-pills">
-          <button class="tf-pill sel" data-m="sp500">S&amp;P 500</button>
-          <button class="tf-pill" data-m="cac40">CAC 40</button>
-          <button class="tf-pill" data-m="eurostoxx50">STOXX 50</button>
-        </div>
-      </div>
-      <div class="rr-group">
-        <span class="field-label" data-i18n="lang_lbl">// LANG</span>
-        <div class="tf-pills" id="lang-pills">
-          <button class="tf-pill" data-l="en">EN</button>
-          <button class="tf-pill" data-l="fr">FR</button>
-        </div>
-      </div>
     </div>
     <p class="menu-foot" data-i18n="foot">real market data · no login · just vibes</p>
   </div>
@@ -132,6 +146,7 @@
       <span class="gh-round" id="hud-round">ROUND 01/10</span>
     </div>
     <div class="gh-right">
+      <span class="gh-market" id="hud-market">S&amp;P 500</span>
       <span class="gh-level" id="hud-level">EASY</span>
       <span class="gh-score" id="hud-score">0 PTS</span>
     </div>
@@ -145,6 +160,7 @@
         <p class="intel-row"><span data-i18n="since">SINCE</span> <b id="intel-founded"></b></p>
         <p class="intel-row">CAP <b id="intel-cap"></b></p>
         <p class="intel-row intel-sector" id="intel-sector"></p>
+        <p class="intel-row" id="intel-country"></p>
       </aside>
       <div class="chart-corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     </div>
@@ -163,6 +179,12 @@
       <div class="field">
         <span class="field-label" id="tf-label">// TIMEFRAME</span>
         <div class="tf-pills" id="tf-pills"></div>
+      </div>
+    </div>
+    <div class="guess-row" id="hint-row" hidden>
+      <div class="field">
+        <span class="field-label" id="hints-label">// HINTS</span>
+        <div class="hint-pills" id="hint-pills"></div>
       </div>
     </div>
     <button class="btn-submit" id="btn-submit" disabled data-i18n="lock">LOCK IN GUESS</button>
@@ -196,15 +218,14 @@
     <p class="results-over" data-i18n="session">SESSION CLOSED</p>
     <p class="results-grade" id="results-grade"></p>
     <p class="results-score"><span id="results-score">0</span><span class="rs-max" id="results-max"></span></p>
-    <ul class="results-list" id="results-list"></ul>
-    <a class="sponsor-card" id="sponsor-card" target="_blank" rel="noopener sponsored" hidden>
-      <span class="sponsor-tag">// SPONSORED</span>
-      <span class="sponsor-text" id="sponsor-text"></span>
-      <span class="sponsor-cta" id="sponsor-cta"></span>
-      <span class="sponsor-disclaimer" id="sponsor-disclaimer"></span>
-    </a>
     <div class="share-box">
       <img id="share-img" src="data:," alt="Your STOCKGUESSR score card">
+      <a class="sponsor-card" id="sponsor-card" target="_blank" rel="noopener sponsored" hidden>
+        <span class="sponsor-tag">// SPONSORED</span>
+        <span class="sponsor-text" id="sponsor-text"></span>
+        <span class="sponsor-cta" id="sponsor-cta"></span>
+        <span class="sponsor-disclaimer" id="sponsor-disclaimer"></span>
+      </a>
       <div class="share-actions">
         <button class="btn-submit btn-share" id="btn-share" hidden data-i18n="share">SHARE ↗</button>
         <button class="btn-submit btn-share" id="btn-copy-img" data-i18n="copy_img">COPY IMAGE</button>
@@ -213,9 +234,12 @@
       </div>
       <p class="share-feedback" id="share-feedback">&nbsp;</p>
     </div>
+    <ul class="results-list" id="results-list"></ul>
   </div>
 </section>
 
 <script src="app.js"></script>
+
 </body>
 </html>
+
