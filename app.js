@@ -3,16 +3,110 @@
 
 const TIMEFRAMES = ['1D', '3D', '1M', '3M', '1Y', '5Y', 'ALL'];
 
+/* ─────────── i18n ───────────
+   Transcreated, not translated — the humour is rewritten per language.
+   Brand elements (STOCKGUESSR, timeframe pills, CAP) stay English. */
+const STR = {
+  en: {
+    tagline: 'ten charts. <em>no names.</em> trust the line.',
+    d_easy: 'Easy', d_easy_desc: 'Mega-caps, prices on the axis. Browse all timeframes freely.',
+    d_medium: 'Medium', d_medium_desc: 'Top 50, the axis goes dark. Timeframes still yours to browse.',
+    d_hard: 'Hard', d_hard_desc: 'All 500 tickers, one frozen chart — and now you guess the timeframe too.',
+    d_veryhard: 'Very Hard', d_veryhard_desc: 'Pure chaos. Even the quants would sweat.',
+    foot: 'real market data · no login · just vibes',
+    rounds_lbl: '// ROUNDS', market_lbl: '// MARKET', settings: '// SETTINGS',
+    rounds_word: 'ROUNDS', market_word: 'MARKET', lang_word: 'LANGUAGE',
+    company_lbl: '// COMPANY', lock: 'LOCK IN GUESS',
+    clues: '// CLUES', since: 'SINCE',
+    rs_company: 'COMPANY', rs_tf: 'TIMEFRAME', rs_pts: 'POINTS',
+    session: 'SESSION CLOSED', share: 'SHARE ↗', copy_img: 'COPY IMAGE', post_x: 'POST ON 𝕏', again: 'RUN IT BACK',
+    round_word: 'ROUND',
+    levels: ['EASY', 'MEDIUM', 'HARD'],
+    diffs: { easy: 'EASY', medium: 'MEDIUM', hard: 'HARD', veryhard: 'VERY HARD' },
+    tf_guess: '// TIMEFRAME — YOUR GUESS', tf_browse: '// TIMEFRAME — BROWSE FREELY',
+    ph_top: n => `one of the top ${n}…`, ph_any: n => `any of the ${n}…`,
+    v_good: ['Absolutely nailed it.', 'The tape never lies.', 'Inside information?'],
+    v_mid: ['Half right. Half rekt.', 'Close, but the market is cruel.', 'Partial fill.'],
+    v_bad: ['Liquidated.', 'The chart says no.', 'Margin call.'],
+    next: 'NEXT CHART →', see_results: 'SEE RESULTS →',
+    tfl: { '1D': '1 day', '3D': '3 days', '1M': '1 month', '3M': '3 months', '1Y': '1 year', '5Y': '5 years' },
+    all_time: y => `All time (since ${y})`,
+    grades: [[0.9, 'The Oracle of Omaha.'], [0.7, 'Wolf of Wall Street.'], [0.5, 'Portfolio manager.'], [0.3, 'Day trader energy.'], [0.12, 'Retail investor.'], [0, 'Index funds. Please.']],
+    f_shared: 'SHARED ✓', f_shared_txt: 'SHARED ✓ (TEXT — LONG-PRESS THE IMAGE TO ADD IT)',
+    f_fail: n => `SHARE FAILED (${n}) — LONG-PRESS THE IMAGE INSTEAD`,
+    f_img: 'IMAGE IN CLIPBOARD — PASTE IT ANYWHERE ✓', f_longpress: 'LONG-PRESS THE IMAGE ABOVE TO SAVE OR SHARE IT',
+    f_dl: 'CLIPBOARD BLOCKED — IMAGE DOWNLOADED ✓',
+    sponsor: [
+      [0.7, 'You clearly read charts better than most. Put it to work — commission-free.'],
+      [0.4, 'Decent eye. Imagine if those had been real positions.'],
+      [0.12, 'Reading charts is hard. Owning them is easier — commission-free.'],
+      [0, 'Rough session. Good thing this was free — unlike real trading, which can also be free.'],
+    ],
+    sponsor_cta: 'TRY TRADE REPUBLIC →', sponsor_disc: 'Investing carries a risk of capital loss.',
+  },
+  fr: {
+    tagline: 'dix graphiques. <em>aucun nom.</em> fais confiance à la courbe.',
+    d_easy: 'Facile', d_easy_desc: 'Méga-caps, prix affichés. Explore toutes les périodes librement.',
+    d_medium: 'Moyen', d_medium_desc: "Top 50, l'axe s'éteint. Les périodes restent explorables.",
+    d_hard: 'Difficile', d_hard_desc: 'Les 500 valeurs, un graphique figé — et il faut aussi deviner la période.',
+    d_veryhard: 'Très Difficile', d_veryhard_desc: 'Le chaos pur. Même les quants transpireraient.',
+    foot: 'vraies données de marché · sans compte · que des vibes',
+    rounds_lbl: '// MANCHES', market_lbl: '// MARCHÉ', settings: '// RÉGLAGES',
+    rounds_word: 'MANCHES', market_word: 'MARCHÉ', lang_word: 'LANGUE',
+    company_lbl: '// SOCIÉTÉ', lock: 'VALIDER LE PARI',
+    clues: '// INDICES', since: 'DEPUIS',
+    rs_company: 'SOCIÉTÉ', rs_tf: 'PÉRIODE', rs_pts: 'POINTS',
+    session: 'SÉANCE TERMINÉE', share: 'PARTAGER ↗', copy_img: "COPIER L'IMAGE", post_x: 'POSTER SUR 𝕏', again: 'ON REMET ÇA',
+    round_word: 'MANCHE',
+    levels: ['FACILE', 'MOYEN', 'DIFFICILE'],
+    diffs: { easy: 'FACILE', medium: 'MOYEN', hard: 'DIFFICILE', veryhard: 'TRÈS DIFFICILE' },
+    tf_guess: '// PÉRIODE — TON PARI', tf_browse: '// PÉRIODE — EXPLORE LIBREMENT',
+    ph_top: n => `une du top ${n}…`, ph_any: n => `n'importe laquelle des ${n}…`,
+    v_good: ['En plein dans le mille.', 'Le marché ne ment jamais.', "Délit d'initié ?"],
+    v_mid: ['À moitié juste. À moitié ruiné.', 'Proche, mais le marché est cruel.', 'Exécution partielle.'],
+    v_bad: ['Liquidé.', 'Le graphique dit non.', 'Appel de marge.'],
+    next: 'GRAPHIQUE SUIVANT →', see_results: 'VOIR LES RÉSULTATS →',
+    tfl: { '1D': '1 jour', '3D': '3 jours', '1M': '1 mois', '3M': '3 mois', '1Y': '1 an', '5Y': '5 ans' },
+    all_time: y => `Depuis toujours (${y})`,
+    grades: [[0.9, "L'Oracle d'Omaha."], [0.7, 'Le Loup de Wall Street.'], [0.5, 'Gérant de portefeuille.'], [0.3, 'Énergie de day trader.'], [0.12, 'Investisseur particulier.'], [0, 'Les ETF. S\'il te plaît.']],
+    f_shared: 'PARTAGÉ ✓', f_shared_txt: "PARTAGÉ ✓ (TEXTE — APPUI LONG SUR L'IMAGE POUR L'AJOUTER)",
+    f_fail: n => `ÉCHEC DU PARTAGE (${n}) — APPUI LONG SUR L'IMAGE`,
+    f_img: 'IMAGE COPIÉE — COLLE-LA OÙ TU VEUX ✓', f_longpress: "APPUI LONG SUR L'IMAGE POUR L'ENREGISTRER OU LA PARTAGER",
+    f_dl: 'PRESSE-PAPIERS BLOQUÉ — IMAGE TÉLÉCHARGÉE ✓',
+    sponsor: [
+      [0.7, 'Tu lis clairement mieux les graphiques que la moyenne. Mets ça à profit — sans commission.'],
+      [0.4, "Pas mal, l'œil. Imagine si c'étaient de vraies positions."],
+      [0.12, "Lire les graphiques, c'est dur. Les détenir, c'est plus simple — sans commission."],
+      [0, "Séance compliquée. Heureusement, c'était gratuit — comme le vrai trading, d'ailleurs."],
+    ],
+    sponsor_cta: 'ESSAYER TRADE REPUBLIC →', sponsor_disc: 'Investir comporte un risque de perte en capital.',
+  },
+};
+
+let lang = localStorage.getItem('sg_lang') || (navigator.language?.startsWith('fr') ? 'fr' : 'en');
+const t = key => STR[lang][key];
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const v = t(el.dataset.i18n);
+    if (v != null) el.innerHTML = v;
+  });
+  document.querySelectorAll('#lang-pills .tf-pill, #lang-pills-mobile .tf-pill')
+    .forEach(x => x.classList.toggle('sel', x.dataset.l === lang));
+}
+
 // Per-game mix of question levels [easy, medium, hard].
 // Question level: easy = top 20 + visible price axis, medium = top 50, hard = everything.
 // guessTf: hard modes hide the timeframe and make you guess it;
 // friendly modes let you browse timeframes freely and only guess the company.
 const DIFFICULTY = {
-  easy:     { label: 'EASY',      mix: [7, 3, 0], guessTf: false },
-  medium:   { label: 'MEDIUM',    mix: [2, 6, 2], guessTf: false },
-  hard:     { label: 'HARD',      mix: [1, 4, 5], guessTf: true },
-  veryhard: { label: 'VERY HARD', mix: [0, 2, 8], guessTf: true },
+  easy:     { key: 'easy',     mix: [7, 3, 0], guessTf: false },
+  medium:   { key: 'medium',   mix: [2, 6, 2], guessTf: false },
+  hard:     { key: 'hard',     mix: [1, 4, 5], guessTf: true },
+  veryhard: { key: 'veryhard', mix: [0, 2, 8], guessTf: true },
 };
+const diffLabel = () => t('diffs')[game.diff.key];
 const LEVEL = [
   { name: 'EASY',   pool: 20,       axis: true,  pts: 100 },
   { name: 'MEDIUM', pool: 50,       axis: false, pts: 150 },
@@ -50,6 +144,14 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 
 /* ─────────── boot ─────────── */
 async function boot() {
+  applyLang();
+  const langPills = document.querySelectorAll('#lang-pills .tf-pill, #lang-pills-mobile .tf-pill');
+  langPills.forEach(pill =>
+    pill.addEventListener('click', () => {
+      lang = pill.dataset.l;
+      localStorage.setItem('sg_lang', lang);
+      applyLang();
+    }));
   await loadMarket(market);
   buildTickerTape();
   document.querySelectorAll('.diff-card').forEach(card =>
@@ -155,9 +257,9 @@ async function loadRound() {
   guess = { company: null, tf: null };
   viewTf = round.tf;
 
-  $('hud-round').textContent = `ROUND ${String(game.idx + 1).padStart(2, '0')}/${game.rounds.length}`;
+  $('hud-round').textContent = `${t('round_word')} ${String(game.idx + 1).padStart(2, '0')}/${game.rounds.length}`;
   $('hud-score').textContent = `${game.score} PTS`;
-  $('hud-level').textContent = LEVEL[round.lvl].name;
+  $('hud-level').textContent = t('levels')[round.lvl];
   $('hud-level').style.color = ['var(--green)', 'var(--amber)', 'var(--red)'][round.lvl];
 
   $('guess-panel').style.display = '';
@@ -165,7 +267,7 @@ async function loadRound() {
   const input = $('company-input');
   input.value = ''; input.classList.remove('locked'); input.disabled = false;
   const poolSize = Math.min(LEVEL[round.lvl].pool, COMPANIES.length);
-  input.placeholder = poolSize === COMPANIES.length ? `any of the ${poolSize}…` : `one of the top ${poolSize}…`;
+  input.placeholder = poolSize === COMPANIES.length ? t('ph_any')(poolSize) : t('ph_top')(poolSize);
   $('ac-list').hidden = true;
   buildTfPills();
   updateSubmit();
@@ -304,7 +406,7 @@ function buildTfPills() {
   const round = game.rounds[game.idx];
   const box = $('tf-pills');
   box.innerHTML = '';
-  $('tf-label').textContent = game.diff.guessTf ? '// TIMEFRAME — YOUR GUESS' : '// TIMEFRAME — BROWSE FREELY';
+  $('tf-label').textContent = game.diff.guessTf ? t('tf_guess') : t('tf_browse');
   TIMEFRAMES.forEach(tf => {
     const b = document.createElement('button');
     b.className = 'tf-pill'; b.textContent = tf;
@@ -343,9 +445,9 @@ function submitGuess() {
   $('guess-panel').style.display = 'none';
 
   const verdict = $('reveal-verdict');
-  if (okCompany && okTf !== false) { verdict.textContent = pick(['Absolutely nailed it.', 'The tape never lies.', 'Inside information?']); verdict.className = 'reveal-verdict good'; }
-  else if (okCompany || okTf) { verdict.textContent = pick(['Half right. Half rekt.', 'Close, but the market is cruel.', 'Partial fill.']); verdict.className = 'reveal-verdict mid'; }
-  else { verdict.textContent = pick(['Liquidated.', 'The chart says no.', 'Margin call.']); verdict.className = 'reveal-verdict bad'; }
+  if (okCompany && okTf !== false) { verdict.textContent = pick(t('v_good')); verdict.className = 'reveal-verdict good'; }
+  else if (okCompany || okTf) { verdict.textContent = pick(t('v_mid')); verdict.className = 'reveal-verdict mid'; }
+  else { verdict.textContent = pick(t('v_bad')); verdict.className = 'reveal-verdict bad'; }
 
   $('reveal-company').textContent = `${round.company.n} (${round.company.t})`;
   $('reveal-company-mark').textContent = okCompany ? '✓' : `✗ ${guess.company.t}`;
@@ -359,13 +461,12 @@ function submitGuess() {
   }
   $('reveal-points').textContent = `+${pts}`;
   $('reveal-panel').hidden = false;
-  $('btn-next').textContent = game.idx === game.rounds.length - 1 ? 'SEE RESULTS →' : 'NEXT CHART →';
+  $('btn-next').textContent = game.idx === game.rounds.length - 1 ? t('see_results') : t('next');
   $('btn-next').focus();
 }
 
 function tfLabel(tf, company) {
-  const labels = { '1D': '1 day', '3D': '3 days', '1M': '1 month', '3M': '3 months', '1Y': '1 year', '5Y': '5 years' };
-  return tf === 'ALL' ? `All time (since ${currentData?.since ?? '—'})` : labels[tf];
+  return tf === 'ALL' ? t('all_time')(currentData?.since ?? '—') : t('tfl')[tf];
 }
 
 $('btn-next').addEventListener('click', () => {
@@ -377,18 +478,10 @@ $('btn-next').addEventListener('click', () => {
 /* ─────────── sponsor slot ───────────
    One native ad on the results screen. Swap campaigns by editing this object;
    set enabled: false to run clean. url should carry your affiliate tag. */
+// Copy lives in STR[lang].sponsor (score-tiered), sponsor_cta, sponsor_disc.
 const SPONSOR = {
   enabled: true,
-  // [min score ratio, pitch] — first match wins, so keep descending
-  texts: [
-    [0.7, 'You clearly read charts better than most. Put it to work — commission-free.'],
-    [0.4, 'Decent eye. Imagine if those had been real positions.'],
-    [0.12, 'Reading charts is hard. Owning them is easier — commission-free.'],
-    [0, 'Rough session. Good thing this was free — unlike real trading, which can also be free.'],
-  ],
-  cta: 'TRY TRADE REPUBLIC →',
   url: 'https://refnocode.trade.re/ffxf9qx5',
-  disclaimer: 'Investing carries a risk of capital loss.',
 };
 
 function renderSponsor() {
@@ -396,9 +489,9 @@ function renderSponsor() {
   card.hidden = !SPONSOR.enabled;
   if (!SPONSOR.enabled) return;
   const ratio = game.score / game.max;
-  $('sponsor-text').textContent = SPONSOR.texts.find(([min]) => ratio >= min)[1];
-  $('sponsor-cta').textContent = SPONSOR.cta;
-  $('sponsor-disclaimer').textContent = SPONSOR.disclaimer ?? '';
+  $('sponsor-text').textContent = t('sponsor').find(([min]) => ratio >= min)[1];
+  $('sponsor-cta').textContent = t('sponsor_cta');
+  $('sponsor-disclaimer').textContent = t('sponsor_disc');
   card.href = SPONSOR.url;
 }
 
@@ -406,13 +499,7 @@ function renderSponsor() {
 function showResults() {
   show('screen-results');
   const ratio = game.score / game.max;
-  const grade =
-    ratio >= 0.9 ? 'The Oracle of Omaha.' :
-    ratio >= 0.7 ? 'Wolf of Wall Street.' :
-    ratio >= 0.5 ? 'Portfolio manager.' :
-    ratio >= 0.3 ? 'Day trader energy.' :
-    ratio >= 0.12 ? 'Retail investor.' : 'Index funds. Please.';
-  $('results-grade').textContent = grade;
+  $('results-grade').textContent = t('grades').find(([min]) => ratio >= min)[1];
   $('results-score').textContent = game.score;
   $('results-max').textContent = ` / ${game.max}`;
   $('results-list').innerHTML = game.results.map((r, i) => `
@@ -444,7 +531,7 @@ function shareText() {
   for (let i = 0; i < game.results.length; i += 5)
     rows.push(game.results.slice(i, i + 5).map(roundEmoji).join(''));
   const grid = rows.join('\n');
-  return `STOCKGUESSR · ${game.diff.label} · ${MARKETS[game.market].label}\n${grid}\n${game.score}/${game.max} PTS — ${$('results-grade').textContent}\nhttps://${SITE}`;
+  return `STOCKGUESSR · ${diffLabel()} · ${MARKETS[game.market].label}\n${grid}\n${game.score}/${game.max} PTS — ${$('results-grade').textContent}\nhttps://${SITE}`;
 }
 
 async function buildShareImage() {
@@ -496,7 +583,7 @@ async function buildShareImage() {
 
   ctx.font = '500 30px "IBM Plex Mono"';
   ctx.fillStyle = '#ffc24b';
-  ctx.fillText(`— ${game.diff.label} · ${MARKETS[game.market].label} —`, S / 2, 215);
+  ctx.fillText(`— ${diffLabel()} · ${MARKETS[game.market].label} —`, S / 2, 215);
 
   ctx.font = '600 190px "IBM Plex Mono"';
   ctx.fillStyle = '#2dff8a';
@@ -558,7 +645,7 @@ $('btn-share').addEventListener('click', async () => {
   const file = new File([shareBlob], 'stockguessr-score.png', { type: 'image/png' });
   try {
     await navigator.share({ files: [file], title: 'STOCKGUESSR', text: shareText() });
-    flash('SHARED ✓');
+    flash(t('f_shared'));
     return;
   } catch (e) {
     if (e.name === 'AbortError') return;
@@ -566,9 +653,9 @@ $('btn-share').addEventListener('click', async () => {
   // some Android browsers/webviews choke on files+text — retry with text only
   try {
     await navigator.share({ title: 'STOCKGUESSR', text: shareText() });
-    flash('SHARED ✓ (TEXT — LONG-PRESS THE IMAGE TO ADD IT)');
+    flash(t('f_shared_txt'));
   } catch (e) {
-    if (e.name !== 'AbortError') flash(`SHARE FAILED (${e.name}) — LONG-PRESS THE IMAGE INSTEAD`);
+    if (e.name !== 'AbortError') flash(t('f_fail')(e.name));
   }
 });
 
@@ -577,18 +664,18 @@ const isTouch = matchMedia('(pointer: coarse)').matches;
 $('btn-copy-img').addEventListener('click', async () => {
   try {
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': shareBlob })]);
-    flash('IMAGE IN CLIPBOARD — PASTE IT ANYWHERE ✓');
+    flash(t('f_img'));
   } catch {
     if (isTouch) {
       // blob downloads are unreliable on mobile; the native gesture works better
-      flash('LONG-PRESS THE IMAGE ABOVE TO SAVE OR SHARE IT');
+      flash(t('f_longpress'));
     } else {
       // browser without image clipboard (e.g. Firefox): download instead
       const a = document.createElement('a');
       a.href = $('share-img').src;
       a.download = 'stockguessr-score.png';
       a.click();
-      flash('CLIPBOARD BLOCKED — IMAGE DOWNLOADED ✓');
+      flash(t('f_dl'));
     }
   }
 });

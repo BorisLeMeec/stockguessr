@@ -35,14 +35,14 @@
   <div class="menu-inner">
     <p class="ticker-tape" id="ticker-tape" aria-hidden="true"></p>
     <h1 class="logo">STOCK<span class="logo-accent">GUESSR</span></h1>
-    <p class="tagline">ten charts. <em>no names.</em> trust the line.</p>
+    <p class="tagline" data-i18n="tagline">ten charts. <em>no names.</em> trust the line.</p>
 
     <div class="settings-row">
       <button class="settings-gear" id="btn-settings" aria-label="Settings">⚙</button>
       <div class="settings-panel" id="settings-panel" hidden>
-        <p class="settings-title">// SETTINGS</p>
+        <p class="settings-title" data-i18n="settings">// SETTINGS</p>
         <div class="settings-field">
-          <span class="field-label">ROUNDS</span>
+          <span class="field-label" data-i18n="rounds_word">ROUNDS</span>
           <div class="tf-pills" id="rounds-pills-mobile">
             <button class="tf-pill" data-n="1">1</button>
             <button class="tf-pill" data-n="5">5</button>
@@ -51,11 +51,18 @@
           </div>
         </div>
         <div class="settings-field">
-          <span class="field-label">MARKET</span>
+          <span class="field-label" data-i18n="market_word">MARKET</span>
           <div class="tf-pills" id="market-pills-mobile">
             <button class="tf-pill sel" data-m="sp500">S&amp;P 500</button>
             <button class="tf-pill" data-m="cac40">CAC 40</button>
             <button class="tf-pill" data-m="eurostoxx50">STOXX 50</button>
+          </div>
+        </div>
+        <div class="settings-field">
+          <span class="field-label" data-i18n="lang_word">LANGUAGE</span>
+          <div class="tf-pills" id="lang-pills-mobile">
+            <button class="tf-pill" data-l="en">EN</button>
+            <button class="tf-pill" data-l="fr">FR</button>
           </div>
         </div>
       </div>
@@ -64,45 +71,50 @@
     <div class="diff-grid">
       <button class="diff-card" data-diff="easy">
         <span class="diff-num">01</span>
-        <span class="diff-name">Easy</span>
-        <span class="diff-desc">Mega-caps, prices on the axis. Browse all timeframes freely.</span>
+        <span class="diff-name" data-i18n="d_easy">Easy</span>
+        <span class="diff-desc" data-i18n="d_easy_desc">Mega-caps, prices on the axis. Browse all timeframes freely.</span>
         <span class="diff-meter"><i style="--w:25%"></i></span>
       </button>
       <button class="diff-card" data-diff="medium">
         <span class="diff-num">02</span>
-        <span class="diff-name">Medium</span>
-        <span class="diff-desc">Top 50, the axis goes dark. Timeframes still yours to browse.</span>
+        <span class="diff-name" data-i18n="d_medium">Medium</span>
+        <span class="diff-desc" data-i18n="d_medium_desc">Top 50, the axis goes dark. Timeframes still yours to browse.</span>
         <span class="diff-meter"><i style="--w:50%"></i></span>
       </button>
       <button class="diff-card" data-diff="hard">
         <span class="diff-num">03</span>
-        <span class="diff-name">Hard</span>
-        <span class="diff-desc">All 500 tickers, one frozen chart — and now you guess the timeframe too.</span>
+        <span class="diff-name" data-i18n="d_hard">Hard</span>
+        <span class="diff-desc" data-i18n="d_hard_desc">All 500 tickers, one frozen chart — and now you guess the timeframe too.</span>
         <span class="diff-meter"><i style="--w:75%"></i></span>
       </button>
       <button class="diff-card" data-diff="veryhard">
         <span class="diff-num">04</span>
-        <span class="diff-name">Very Hard</span>
-        <span class="diff-desc">Pure chaos. Even the quants would sweat.</span>
+        <span class="diff-name" data-i18n="d_veryhard">Very Hard</span>
+        <span class="diff-desc" data-i18n="d_veryhard_desc">Pure chaos. Even the quants would sweat.</span>
         <span class="diff-meter"><i style="--w:100%"></i></span>
       </button>
     </div>
     <div class="rounds-row">
-      <span class="field-label">// ROUNDS</span>
+      <span class="field-label" data-i18n="rounds_lbl">// ROUNDS</span>
       <div class="tf-pills" id="rounds-pills">
         <button class="tf-pill" data-n="1">1</button>
         <button class="tf-pill" data-n="5">5</button>
         <button class="tf-pill sel" data-n="10">10</button>
         <button class="tf-pill" data-n="20">20</button>
       </div>
-      <span class="field-label rr-sep">// MARKET</span>
+      <span class="field-label rr-sep" data-i18n="market_lbl">// MARKET</span>
       <div class="tf-pills" id="market-pills">
         <button class="tf-pill sel" data-m="sp500">S&amp;P 500</button>
         <button class="tf-pill" data-m="cac40">CAC 40</button>
         <button class="tf-pill" data-m="eurostoxx50">STOXX 50</button>
       </div>
+      <span class="field-label rr-sep">// LANG</span>
+      <div class="tf-pills" id="lang-pills">
+        <button class="tf-pill" data-l="en">EN</button>
+        <button class="tf-pill" data-l="fr">FR</button>
+      </div>
     </div>
-    <p class="menu-foot">real market data · no login · just vibes</p>
+    <p class="menu-foot" data-i18n="foot">real market data · no login · just vibes</p>
   </div>
 </section>
 
@@ -123,8 +135,8 @@
     <div class="chart-frame">
       <canvas id="chart"></canvas>
       <aside class="intel-card" id="intel-card" hidden>
-        <span class="intel-label">// CLUES</span>
-        <p class="intel-row">SINCE <b id="intel-founded"></b></p>
+        <span class="intel-label" data-i18n="clues">// CLUES</span>
+        <p class="intel-row"><span data-i18n="since">SINCE</span> <b id="intel-founded"></b></p>
         <p class="intel-row">CAP <b id="intel-cap"></b></p>
         <p class="intel-row intel-sector" id="intel-sector"></p>
       </aside>
@@ -135,7 +147,7 @@
   <div class="guess-panel" id="guess-panel">
     <div class="guess-row">
       <div class="field field-company">
-        <label class="field-label" for="company-input">// COMPANY</label>
+        <label class="field-label" for="company-input" data-i18n="company_lbl">// COMPANY</label>
         <input id="company-input" type="text" autocomplete="off" spellcheck="false"
                placeholder="start typing…">
         <ul class="ac-list" id="ac-list" hidden></ul>
@@ -147,24 +159,24 @@
         <div class="tf-pills" id="tf-pills"></div>
       </div>
     </div>
-    <button class="btn-submit" id="btn-submit" disabled>LOCK IN GUESS</button>
+    <button class="btn-submit" id="btn-submit" disabled data-i18n="lock">LOCK IN GUESS</button>
   </div>
 
   <div class="reveal-panel" id="reveal-panel" hidden>
     <p class="reveal-verdict" id="reveal-verdict"></p>
     <div class="reveal-solution">
       <div class="rs-block">
-        <span class="rs-label">COMPANY</span>
+        <span class="rs-label" data-i18n="rs_company">COMPANY</span>
         <span class="rs-value" id="reveal-company"></span>
         <span class="rs-mark" id="reveal-company-mark"></span>
       </div>
       <div class="rs-block">
-        <span class="rs-label">TIMEFRAME</span>
+        <span class="rs-label" data-i18n="rs_tf">TIMEFRAME</span>
         <span class="rs-value" id="reveal-tf"></span>
         <span class="rs-mark" id="reveal-tf-mark"></span>
       </div>
       <div class="rs-block">
-        <span class="rs-label">POINTS</span>
+        <span class="rs-label" data-i18n="rs_pts">POINTS</span>
         <span class="rs-value rs-points" id="reveal-points"></span>
       </div>
     </div>
@@ -175,7 +187,7 @@
 <!-- ════════ RESULTS ════════ -->
 <section id="screen-results" class="screen">
   <div class="results-inner">
-    <p class="results-over">SESSION CLOSED</p>
+    <p class="results-over" data-i18n="session">SESSION CLOSED</p>
     <p class="results-grade" id="results-grade"></p>
     <p class="results-score"><span id="results-score">0</span><span class="rs-max" id="results-max"></span></p>
     <ul class="results-list" id="results-list"></ul>
@@ -188,10 +200,10 @@
     <div class="share-box">
       <img id="share-img" src="data:," alt="Your STOCKGUESSR score card">
       <div class="share-actions">
-        <button class="btn-submit btn-share" id="btn-share" hidden>SHARE ↗</button>
-        <button class="btn-submit btn-share" id="btn-copy-img">COPY IMAGE</button>
-        <a class="btn-submit btn-share" id="btn-x" target="_blank" rel="noopener">POST ON 𝕏</a>
-        <button class="btn-submit btn-again" id="btn-again">RUN IT BACK</button>
+        <button class="btn-submit btn-share" id="btn-share" hidden data-i18n="share">SHARE ↗</button>
+        <button class="btn-submit btn-share" id="btn-copy-img" data-i18n="copy_img">COPY IMAGE</button>
+        <a class="btn-submit btn-share" id="btn-x" target="_blank" rel="noopener" data-i18n="post_x">POST ON 𝕏</a>
+        <button class="btn-submit btn-again" id="btn-again" data-i18n="again">RUN IT BACK</button>
       </div>
       <p class="share-feedback" id="share-feedback">&nbsp;</p>
     </div>
