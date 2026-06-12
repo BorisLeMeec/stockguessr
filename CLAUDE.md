@@ -1,0 +1,92 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this is
+
+STOCKGUESSR (https://stockguessr.fr) — a static web game: players see a real stock chart (green/red line, black background) and guess which company it is, and on hard modes also the timeframe. Vanilla HTML/CSS/JS, **no build step, no backend, no framework, no login**. All market data is baked into static JSON and refreshed daily by a GitHub Action.
+
+## Commands
+
+```bash
+# Run locally (any static server works; data is fetch()ed so file:// won't)
+python3 -m http.server 8642        # → http://localhost:8642
+
+# Data pipeline (Node 22, no npm deps)
+node scripts/build-companies.mjs       # S&P 500 list from tmp/constituents.csv
+node scripts/cac40.mjs                 # CAC 40 list (hand-curated in the script)
+node scripts/eurostoxx50.mjs           # EURO STOXX 50 list (hand-curated)
+node scripts/fetch-data.mjs <market>   # price history per ticker (resumable; delete data/<market>/stocks/ first for full refresh)
+node scripts/fetch-caps.mjs            # live market caps for ALL markets + re-sorts lists by cap
+
+# Deploy (push to main auto-deploys via GitHub Action; manual:)
+rtk proxy npx -y wrangler pages deploy . --project-name stockguessr --branch main --commit-dirty=true
+# ALWAYS verify after deploying — one deploy silently failed once:
+curl -s "https://stockguessr.fr/?v=$RANDOM" | grep -c "<some new string>"
+```
+
+There is no test suite. Verification is done ad-hoc with Playwright: `npm i playwright --no-save` (browsers already cached in ~/Library/Caches/ms-playwright), drive a full game headlessly, then `rm -rf node_modules package.json package-lock.json` — never commit these.
+
+## Architecture
+
+Three frontend files: `index.html`, `style.css`, `app.js` (~700 lines, all logic). Plus `scripts/` (data pipeline) and `data/` (generated JSON, committed to git).
+
+### Data layout — one folder per market
+
+```
+data/<market>/companies.json   # [{t: ticker, n: name, s: sector, f: founded year, c: market cap}] SORTED BY CAP DESC
+data/<market>/available.json   # tickers that have a stocks/ file (the playable set)
+data/<market>/stocks/<T>.json  # {since: year, series: {1D,3D,1M,3M,1Y,5Y,ALL: number[]}}
+```
+
+Markets: `sp500` (from constituents CSV), `cac40`, `eurostoxx50` (hand-curated in their scripts). The cap-desc sort matters: difficulty pools are "top N of the list".
+
+**The S&P constituent list is a static snapshot** (`tmp/constituents.csv`, from github.com/datasets/s-and-p-500-companies). The daily refresh updates prices/caps for the *existing* list only — index membership changes require re-downloading the CSV and rerunning build-companies.
+
+Data source is Yahoo Finance (no API key): `query1.finance.yahoo.com/v8/finance/chart/` for prices (intraday 5d/15m for 1D+3D, max/1d sliced for the rest), and `/v7/finance/quote` for caps — the quote endpoint needs the cookie+crumb dance (see fetch-caps.mjs). fetch-data rejects tickers where any timeframe has <8 points (e.g. fresh IPOs).
+
+### Game model (app.js)
+
+- `LEVEL[0..2]` = question levels: easy (top-20 pool, price axis shown, 100pts), medium (top-50, 150pts), hard (whole market, 200pts). +50 for a correct timeframe when guessed.
+- `DIFFICULTY{easy,medium,hard,veryhard}` = game modes: a `mix` of question levels per 10 rounds (scaled to 1/5/10/20 rounds by largest-remainder in `levelsFor`), and `guessTf`. **Easy/medium: timeframe pills just switch the chart view ("browse freely") and only the company is guessed. Hard/veryhard: one frozen chart, timeframe is part of the guess.**
+- Clue card (`#intel-card`): founded+sector rows show in easy games or on easy-level questions; the CAP row shows up to medium (easy/medium games, or easy/medium-level questions in harder games).
+- Autocomplete is scoped to the current question's pool (top 20/50/all of the selected market).
+- Chart is a hand-drawn canvas: per-segment green/red coloring, glow via shadowBlur, animated sweep on load.
+
+### i18n — transcreation, not translation
+
+`STR = {en: {...}, fr: {...}}` at the top of app.js. Static HTML carries `data-i18n="key"`; `applyLang()` fills them (entries may be **functions of COMPANIES.length** — market-dependent strings like "All 503 tickers", so applyLang must run after loadMarket and re-run on market switch). Dynamic strings go through `t(key)`. Sector names from data files are English; `SECTOR_FR` maps them for French display. Language auto-detects from `navigator.language` (fr→fr), persists in localStorage `sg_lang`. The humour is rewritten per language ("Index funds. Please." → "Les ETF. S'il te plaît.") — keep that bar when adding strings. Brand elements stay English: STOCKGUESSR, timeframe pills, CAP.
+
+### Menu settings exist twice
+
+Rounds/market/language pills are duplicated: inline row (desktop, `#rounds-pills` etc.) and the gear panel (mobile ≤700px, `#rounds-pills-mobile` etc.). Handlers in `boot()` keep both in sync — any new setting must be added to both and wired the same way. The gear panel close-on-outside-tap uses a **capture-phase** listener that swallows the click so it can't also hit a difficulty card underneath.
+
+### Share pipeline
+
+Score card PNG is drawn on a canvas in `buildShareImage()` (1080×1080, fonts via document.fonts.ready). Share flow: native share sheet with file (mobile) → text-only share retry (Android webviews that reject files) → clipboard `ClipboardItem` PNG (desktop) → download (Firefox) / long-press hint (mobile). Wordle-style emoji grid in `shareText()`. Don't add a download fallback on mobile — blob downloads are broken in Android webviews (learned the hard way).
+
+### Sponsor slot
+
+`SPONSOR` object in app.js + score-tiered copy in `STR[lang].sponsor` (`[minRatio, text]`, first match wins). Currently a Trade Republic referral (`refnocode.trade.re/ffxf9qx5`). `enabled: false` kills it. Link must keep `rel="sponsored"`; keep the capital-loss disclaimer (French regulator).
+
+## Infrastructure
+
+- **Hosting**: Cloudflare Pages, project `stockguessr`, account `8aa63153cec6dac52fa6cea3ad90bccd`, custom domain stockguessr.fr (CNAME @ → stockguessr.pages.dev; the zone's MX/TXT records are the owner's IONOS e-mail — never touch them).
+- **CI**: `.github/workflows/deploy.yml` deploys on every push to main; `update-stocks.yml` refreshes all market data daily at 06:00 UTC (≈8am Paris, 9am in winter), with a sanity gate (≥450 sp500 / ≥35 cac40 / ≥45 eurostoxx50 tickers, else abort without committing). Both use the `CLOUDFLARE_API_TOKEN` repo secret. The cron commits as `stock-updater[bot]` — run `git pull` before local work.
+- **Caching**: `_headers` sets `max-age=0, must-revalidate` on app.js/style.css/data so deploys reach clients immediately; the zone's Browser Cache TTL is set to "Respect Existing Headers" — don't break either half.
+- **OG/social**: og.png (menu screenshot, 1200×630) + full OG/Twitter tags in index.html. LinkedIn shows only og:title — that's why the tagline is in it. After changing previews, re-scrape via FB Sharing Debugger / LinkedIn Post Inspector.
+
+## Environment quirks
+
+- Shell commands are auto-prefixed with `rtk` (token filter). It corrupts some outputs: use `rtk proxy <cmd>` for wrangler and curl-with-headers; use Node `fs.readdirSync` instead of `ls` when output feeds a script.
+- Wrangler is authenticated via the user's OAuth (`wrangler whoami` to check). It can manage the Pages project but **cannot edit zone settings or DNS** (dashboard-only, ask the user).
+- `npx wrangler` direct fails under rtk; always `rtk proxy npx -y wrangler …`.
+
+## Adding a market (the established pattern)
+
+1. New `scripts/<market>.mjs` writing `data/<market>/companies.json` (`{t,n,s,f}`, Yahoo ticker format).
+2. Add the market to the loop in `fetch-caps.mjs`; run it (sorts by cap, fills `c`).
+3. `node scripts/fetch-data.mjs <market>`.
+4. `MARKETS` registry in app.js (`dir`, `cur`, `label`) — everything else (pools, autocomplete, clues, shares) adapts automatically.
+5. Market pills in **both** pickers in index.html; cap row currency is per-market.
+6. Add fetch + sanity threshold to `update-stocks.yml`.
