@@ -63,7 +63,7 @@ const STR = {
     d_veryhard: 'Très Difficile', d_veryhard_desc: 'Le chaos pur. Même les quants transpireraient.',
     foot: 'vraies données de marché · sans compte · que des vibes',
     daily_name: 'Le Défi du Jour', train_lbl: 'ENTRAÎNEMENT',
-    daily_desc: 'Cinq graphiques. Les mêmes pour tout le monde. Une seule tentative — fais-la compter.',
+    daily_desc: 'Cinq graphiques. Les mêmes pour tout le monde. Une seule tentative — bon chance.',
     daily_played: (s, m) => `DÉJÀ JOUÉ AUJOURD'HUI ✓ ${s}/${m} PTS — nouveaux graphiques à minuit.`,
     hints_lbl: '// INDICES',
     hint_names: { tf: 'TIMELINE', s: 'SECTEUR', f: 'CRÉATION', c: 'CAP', a: 'PRIX', g: 'PAYS' },
