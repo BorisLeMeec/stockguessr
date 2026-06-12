@@ -564,12 +564,28 @@ input.addEventListener('keydown', e => {
   else if (e.key === 'Enter') { e.preventDefault(); choose(acSel >= 0 ? acSel : 0); }
   else if (e.key === 'Escape') acList.hidden = true;
 });
-input.addEventListener('blur', () => setTimeout(() => { acList.hidden = true; }, 120));
-// on-screen keyboards cover the bottom half: pin the input to the top so the
-// suggestion list gets the remaining visible space (300ms ≈ keyboard animation)
+input.addEventListener('blur', () => setTimeout(() => { acList.hidden = true; undockInput(); }, 120));
+// on-screen keyboards cover the bottom half: instead of scrolling the page,
+// lift the field out of the flow and pin it over the top of the screen so
+// input + suggestions always sit in the visible strip above the keyboard
+const companyField = input.closest('.field-company');
+function placeDock() {
+  if (!companyField.classList.contains('docked')) return;
+  // iOS anchors fixed elements to the layout viewport; follow the visual one
+  companyField.style.top = (window.visualViewport?.offsetTop ?? 0) + 'px';
+}
+window.visualViewport?.addEventListener('resize', placeDock);
+window.visualViewport?.addEventListener('scroll', placeDock);
+function undockInput() {
+  companyField.classList.remove('docked');
+  companyField.style.top = '';
+  companyField.parentElement.style.minHeight = '';
+}
 input.addEventListener('focus', () => {
   if (!matchMedia('(pointer: coarse)').matches) return;
-  setTimeout(() => input.scrollIntoView({ block: 'start', behavior: 'smooth' }), 300);
+  companyField.parentElement.style.minHeight = companyField.offsetHeight + 'px';
+  companyField.classList.add('docked');
+  placeDock();
 });
 
 function paintSel() {

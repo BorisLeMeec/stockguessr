@@ -67,7 +67,9 @@ body {
 }
 
 .screen { display: none; min-height: 100vh; }
-.screen.active { display: flex; flex-direction: column; animation: screenIn .5s ease both; }
+/* fill-mode backwards, NOT both: a lingering fill transform would turn .screen
+   into the containing block for position:fixed (the docked guess input) */
+.screen.active { display: flex; flex-direction: column; animation: screenIn .5s ease backwards; }
 @keyframes screenIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
 /* ════════ MENU ════════ */
@@ -284,6 +286,13 @@ body {
 #guess-input:focus { border-color: var(--green); box-shadow: 0 0 0 1px rgba(45,255,138,.2); }
 #guess-input::placeholder { color: #3a443a; font-style: italic; }
 #guess-input.locked { border-color: var(--green); color: var(--green); }
+
+/* mobile focus: the field docks over the top of the screen (see app.js) */
+.field-company.docked {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: var(--bg); padding: 10px 16px 12px;
+  border-bottom: 1px solid var(--line);
+}
 
 .ac-list {
   position: absolute; top: 100%; left: 0; right: 0; z-index: 20;
