@@ -374,6 +374,34 @@ $('btn-next').addEventListener('click', () => {
   else loadRound();
 });
 
+/* ─────────── sponsor slot ───────────
+   One native ad on the results screen. Swap campaigns by editing this object;
+   set enabled: false to run clean. url should carry your affiliate tag. */
+const SPONSOR = {
+  enabled: true,
+  // [min score ratio, pitch] — first match wins, so keep descending
+  texts: [
+    [0.7, 'You clearly read charts better than most. Put it to work — commission-free.'],
+    [0.4, 'Decent eye. Imagine if those had been real positions.'],
+    [0.12, 'Reading charts is hard. Owning them is easier — commission-free.'],
+    [0, 'Rough session. Good thing this was free — unlike real trading, which can also be free.'],
+  ],
+  cta: 'TRY TRADE REPUBLIC →',
+  url: 'https://refnocode.trade.re/ffxf9qx5',
+  disclaimer: 'Investing carries a risk of capital loss.',
+};
+
+function renderSponsor() {
+  const card = $('sponsor-card');
+  card.hidden = !SPONSOR.enabled;
+  if (!SPONSOR.enabled) return;
+  const ratio = game.score / game.max;
+  $('sponsor-text').textContent = SPONSOR.texts.find(([min]) => ratio >= min)[1];
+  $('sponsor-cta').textContent = SPONSOR.cta;
+  $('sponsor-disclaimer').textContent = SPONSOR.disclaimer ?? '';
+  card.href = SPONSOR.url;
+}
+
 /* ─────────── results ─────────── */
 function showResults() {
   show('screen-results');
@@ -396,6 +424,7 @@ function showResults() {
       <span class="rl-pts ${r.pts ? '' : 'zero'}">+${r.pts}</span>
     </li>`).join('');
   $('share-feedback').innerHTML = '&nbsp;';
+  renderSponsor();
   prepareShare();
 }
 
