@@ -183,38 +183,27 @@ body {
 }
 .rr-group { display: flex; align-items: center; gap: 16px; }
 
-/* settings gear — mobile only, sits above the difficulty grid */
-.settings-row {
-  display: none; position: relative; z-index: 30;
-  justify-content: flex-end; margin: -34px 0 16px;
-  animation: cardIn .55s ease .04s backwards;
-}
-.settings-gear {
-  background: none; border: 1px solid var(--line); color: var(--dim);
-  width: 42px; height: 42px; font-size: 20px; cursor: pointer;
-  transition: color .2s, border-color .2s, transform .4s;
-}
-.settings-gear:hover, .settings-gear.open { color: var(--green); border-color: var(--green); transform: rotate(90deg); }
-.settings-panel {
-  /* centered under the gear; cardIn animates transform, so center via margin not translate */
-  position: absolute; top: 50px; right: 0; width: 264px; z-index: 29;
-  background: #090b09; border: 1px solid var(--line);
-  padding: 18px; text-align: left; box-sizing: border-box;
-  display: flex; flex-direction: column; gap: 12px;
-  box-shadow: 0 18px 48px -12px rgba(0,0,0,.8);
-  animation: cardIn .25s ease both;
-}
-.settings-panel[hidden] { display: none; }
-.settings-title { font-size: 10px; letter-spacing: .26em; color: var(--green); }
-.settings-panel .tf-pill { padding: 10px 0; flex: 1; text-align: center; font-size: 11px; white-space: nowrap; }
-.settings-panel .tf-pills { flex-wrap: nowrap; }
-.settings-field { display: flex; flex-direction: column; gap: 8px; }
-
 .rounds-row-mobile { display: none; }
 @media (max-width: 700px) {
   #screen-menu .rounds-row { display: none; }
-  #screen-menu .global-row { display: none; }
-  .settings-row { display: flex; }
+  /* global settings: one line, labels stacked above their pills */
+  #screen-menu .global-row {
+    justify-content: center; gap: 12px 22px; flex-wrap: nowrap;
+    margin-bottom: 18px;
+  }
+  #screen-menu .global-row .rr-group {
+    flex-direction: column; align-items: flex-start; gap: 8px;
+  }
+  #screen-menu .global-row .tf-pills { flex-wrap: nowrap; }
+  #screen-menu .global-row .tf-pill {
+    padding: 9px 10px; font-size: 11px; white-space: nowrap;
+  }
+}
+/* very narrow phones: squeeze so the settings line still fits */
+@media (max-width: 359px) {
+  #screen-menu .global-row { gap: 12px 14px; }
+  #screen-menu .global-row .tf-pills { gap: 5px; }
+  #screen-menu .global-row .tf-pill { padding: 9px 7px; font-size: 10px; }
   .rounds-row-mobile {
     display: flex; justify-content: center; align-items: center;
     gap: 16px; margin-bottom: 16px;

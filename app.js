@@ -22,8 +22,7 @@ const STR = {
     daily_played: (s, m) => `PLAYED TODAY ✓ ${s}/${m} PTS — new charts at midnight.`,
     hints_lbl: '// HINTS',
     hint_names: { tf: 'TIMELINE', s: 'SECTOR', f: 'FOUNDED', c: 'CAP', a: 'PRICES', g: 'COUNTRY' },
-    rounds_lbl: '// ROUNDS', market_lbl: '// MARKET', lang_lbl: '// LANG', settings: '// SETTINGS',
-    rounds_word: 'ROUNDS', market_word: 'MARKET', lang_word: 'LANGUAGE',
+    rounds_lbl: '// ROUNDS', market_lbl: '// MARKET', lang_lbl: '// LANG',
     company_lbl: '// COMPANY', lock: 'LOCK IN GUESS',
     clues: '// CLUES', since: 'SINCE',
     rs_company: 'COMPANY', rs_tf: 'TIMEFRAME', rs_pts: 'POINTS',
@@ -67,8 +66,7 @@ const STR = {
     daily_played: (s, m) => `DÉJÀ JOUÉ AUJOURD'HUI ✓ ${s}/${m} PTS — nouveaux graphiques à minuit.`,
     hints_lbl: '// INDICES',
     hint_names: { tf: 'TIMELINE', s: 'SECTEUR', f: 'CRÉATION', c: 'CAP', a: 'PRIX', g: 'PAYS' },
-    rounds_lbl: '// MANCHES', market_lbl: '// MARCHÉ', lang_lbl: '// LANGUE', settings: '// RÉGLAGES',
-    rounds_word: 'MANCHES', market_word: 'MARCHÉ', lang_word: 'LANGUE',
+    rounds_lbl: '// MANCHES', market_lbl: '// MARCHÉ', lang_lbl: '// LANGUE',
     company_lbl: '// SOCIÉTÉ', lock: 'VALIDER',
     clues: '// INDICES', since: 'DEPUIS',
     rs_company: 'SOCIÉTÉ', rs_tf: 'TIMELINE', rs_pts: 'POINTS',
@@ -131,7 +129,7 @@ function applyLang() {
     const v = t(el.dataset.i18n);
     if (v != null) el.innerHTML = typeof v === 'function' ? v(COMPANIES.length) : v;
   });
-  document.querySelectorAll('#lang-pills .tf-pill, #lang-pills-mobile .tf-pill')
+  document.querySelectorAll('#lang-pills .tf-pill')
     .forEach(x => x.classList.toggle('sel', x.dataset.l === lang));
   renderDailyCard(); // its copy is language- and market-dependent
 }
@@ -259,7 +257,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 async function boot() {
   await loadMarket(market);
   applyLang();
-  const langPills = document.querySelectorAll('#lang-pills .tf-pill, #lang-pills-mobile .tf-pill');
+  const langPills = document.querySelectorAll('#lang-pills .tf-pill');
   langPills.forEach(pill =>
     pill.addEventListener('click', () => {
       lang = pill.dataset.l;
@@ -269,35 +267,20 @@ async function boot() {
   buildTickerTape();
   document.querySelectorAll('.diff-card').forEach(card =>
     card.addEventListener('click', () => startGame(card.dataset.diff)));
-  // settings pills exist twice (inline row + mobile panel) — keep them in sync
+  // rounds pills exist twice (desktop row + mobile row) — keep them in sync
   const roundPills = document.querySelectorAll('#rounds-pills .tf-pill, #rounds-pills-mobile .tf-pill');
   roundPills.forEach(pill =>
     pill.addEventListener('click', () => {
       roundCount = +pill.dataset.n;
       roundPills.forEach(x => x.classList.toggle('sel', +x.dataset.n === roundCount));
     }));
-  const marketPills = document.querySelectorAll('#market-pills .tf-pill, #market-pills-mobile .tf-pill');
+  const marketPills = document.querySelectorAll('#market-pills .tf-pill');
   marketPills.forEach(pill =>
     pill.addEventListener('click', () => {
       market = pill.dataset.m;
       marketPills.forEach(x => x.classList.toggle('sel', x.dataset.m === market));
       loadMarket(market).then(() => { buildTickerTape(); applyLang(); }); // tape + pool sizes follow the market
     }));
-
-  const gear = $('btn-settings'), panel = $('settings-panel');
-  gear.addEventListener('click', () => {
-    panel.hidden = !panel.hidden;
-    gear.classList.toggle('open', !panel.hidden);
-  });
-  // capture phase: a tap that closes the panel must not also hit what's under it
-  document.addEventListener('click', e => {
-    if (!panel.hidden && !panel.contains(e.target) && e.target !== gear) {
-      panel.hidden = true;
-      gear.classList.remove('open');
-      e.stopPropagation();
-      e.preventDefault();
-    }
-  }, true);
 }
 
 function buildTickerTape() {

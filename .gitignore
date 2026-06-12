@@ -1,5 +1,9 @@
 node_modules/
+.env
 .idea/
 .claude/
 .DS_Store
 .wrangler/
+
+# instant-grep index
+.ig/
