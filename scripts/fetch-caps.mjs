@@ -27,7 +27,7 @@ async function caps(tickers) {
   return new Map((j.quoteResponse?.result || []).map(q => [q.symbol, q.marketCap]));
 }
 
-for (const market of ['sp500', 'cac40']) {
+for (const market of ['sp500', 'cac40', 'eurostoxx50']) {
   const file = new URL(`../data/${market}/companies.json`, import.meta.url);
   const companies = JSON.parse(readFileSync(file, 'utf8'));
   const byCap = new Map();

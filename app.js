@@ -24,6 +24,7 @@ let roundCount = 10; // menu setting: 1 / 5 / 10 / 20
 const MARKETS = {
   sp500: { dir: 'data/sp500', cur: '$' },
   cac40: { dir: 'data/cac40', cur: '€' },
+  eurostoxx50: { dir: 'data/eurostoxx50', cur: '€' },
 };
 let market = 'sp500';         // menu setting
 const marketCache = {};       // lazy-loaded {companies, available} per market

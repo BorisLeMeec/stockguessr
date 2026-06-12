@@ -18,9 +18,10 @@ jobs:
 
       - name: Fetch fresh data
         run: |
-          rm -rf data/sp500/stocks data/cac40/stocks
+          rm -rf data/sp500/stocks data/cac40/stocks data/eurostoxx50/stocks
           node scripts/fetch-data.mjs sp500
           node scripts/fetch-data.mjs cac40
+          node scripts/fetch-data.mjs eurostoxx50
           node scripts/fetch-caps.mjs
 
       - name: Sanity check (abort rather than ship a gutted dataset)
@@ -28,8 +29,9 @@ jobs:
           node -e "
             const a = require('./data/sp500/available.json').length;
             const b = require('./data/cac40/available.json').length;
-            console.log('sp500:', a, '| cac40:', b);
-            if (a < 450 || b < 35) { console.error('too many tickers missing'); process.exit(1); }
+            const c = require('./data/eurostoxx50/available.json').length;
+            console.log('sp500:', a, '| cac40:', b, '| eurostoxx50:', c);
+            if (a < 450 || b < 35 || c < 45) { console.error('too many tickers missing'); process.exit(1); }
           "
 
       - name: Commit and push if changed

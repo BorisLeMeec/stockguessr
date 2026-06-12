@@ -1,0 +1,61 @@
+// EURO STOXX 50 constituents (main Euronext/Xetra/Borsa/BME listings on Yahoo).
+// Order is refined by real market cap via fetch-caps.mjs; founded + sector hand-curated.
+import { writeFileSync, mkdirSync } from 'node:fs';
+
+const STOXX50 = [
+  ['ASML.AS', 'ASML', 'Semiconductors', 1984],
+  ['SAP.DE', 'SAP', 'Software', 1972],
+  ['MC.PA', 'LVMH', 'Luxury', 1987],
+  ['RMS.PA', 'Hermès', 'Luxury', 1837],
+  ['OR.PA', "L'Oréal", 'Cosmetics', 1909],
+  ['TTE.PA', 'TotalEnergies', 'Energy', 1924],
+  ['SIE.DE', 'Siemens', 'Industrials', 1847],
+  ['SU.PA', 'Schneider Electric', 'Industrials', 1836],
+  ['SAN.PA', 'Sanofi', 'Pharma', 1973],
+  ['AIR.PA', 'Airbus', 'Aerospace', 1970],
+  ['AI.PA', 'Air Liquide', 'Industrial Gases', 1902],
+  ['SAF.PA', 'Safran', 'Aerospace', 2005],
+  ['EL.PA', 'EssilorLuxottica', 'Eyewear', 1849],
+  ['BNP.PA', 'BNP Paribas', 'Banking', 1848],
+  ['CS.PA', 'AXA', 'Insurance', 1816],
+  ['DG.PA', 'Vinci', 'Construction', 1899],
+  ['BN.PA', 'Danone', 'Food', 1919],
+  ['SGO.PA', 'Saint-Gobain', 'Building Materials', 1665],
+  ['KER.PA', 'Kering', 'Luxury', 1963],
+  ['STLAP.PA', 'Stellantis', 'Automotive', 2021],
+  ['ALV.DE', 'Allianz', 'Insurance', 1890],
+  ['MUV2.DE', 'Munich Re', 'Insurance', 1880],
+  ['DTE.DE', 'Deutsche Telekom', 'Telecom', 1995],
+  ['DB1.DE', 'Deutsche Börse', 'Financial Exchanges', 1992],
+  ['DHL.DE', 'DHL Group', 'Logistics', 1995],
+  ['ADS.DE', 'Adidas', 'Sportswear', 1949],
+  ['BMW.DE', 'BMW', 'Automotive', 1916],
+  ['MBG.DE', 'Mercedes-Benz Group', 'Automotive', 1926],
+  ['VOW3.DE', 'Volkswagen', 'Automotive', 1937],
+  ['BAS.DE', 'BASF', 'Chemicals', 1865],
+  ['BAYN.DE', 'Bayer', 'Pharma & Chemicals', 1863],
+  ['IFX.DE', 'Infineon', 'Semiconductors', 1999],
+  ['ENR.DE', 'Siemens Energy', 'Energy Technology', 2020],
+  ['RWE.DE', 'RWE', 'Utilities', 1898],
+  ['SAN.MC', 'Banco Santander', 'Banking', 1857],
+  ['BBVA.MC', 'BBVA', 'Banking', 1857],
+  ['IBE.MC', 'Iberdrola', 'Utilities', 1992],
+  ['ITX.MC', 'Inditex (Zara)', 'Retail', 1985],
+  ['ENEL.MI', 'Enel', 'Utilities', 1962],
+  ['ENI.MI', 'Eni', 'Energy', 1953],
+  ['ISP.MI', 'Intesa Sanpaolo', 'Banking', 2007],
+  ['UCG.MI', 'UniCredit', 'Banking', 1998],
+  ['RACE.MI', 'Ferrari', 'Automotive', 1939],
+  ['PRY.MI', 'Prysmian', 'Cables & Grids', 2005],
+  ['INGA.AS', 'ING', 'Banking', 1991],
+  ['ADYEN.AS', 'Adyen', 'Payments', 2006],
+  ['AD.AS', 'Ahold Delhaize', 'Retail', 1887],
+  ['WKL.AS', 'Wolters Kluwer', 'Information Services', 1987],
+  ['ABI.BR', 'AB InBev', 'Beverages', 2008],
+  ['NDA-FI.HE', 'Nordea', 'Banking', 1820],
+];
+
+const companies = STOXX50.map(([t, n, s, f]) => ({ t, n, s, f }));
+mkdirSync(new URL('../data/eurostoxx50', import.meta.url), { recursive: true });
+writeFileSync(new URL('../data/eurostoxx50/companies.json', import.meta.url), JSON.stringify(companies));
+console.log(`Wrote ${companies.length} EURO STOXX 50 companies`);
