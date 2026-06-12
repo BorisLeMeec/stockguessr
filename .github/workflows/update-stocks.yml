@@ -1,0 +1,49 @@
+name: Daily stock data refresh
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # 06:00 UTC ≈ 08:00 Paris (CEST)
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Fetch fresh data
+        run: |
+          rm -rf data/sp500/stocks data/cac40/stocks
+          node scripts/fetch-data.mjs sp500
+          node scripts/fetch-data.mjs cac40
+          node scripts/fetch-caps.mjs
+
+      - name: Sanity check (abort rather than ship a gutted dataset)
+        run: |
+          node -e "
+            const a = require('./data/sp500/available.json').length;
+            const b = require('./data/cac40/available.json').length;
+            console.log('sp500:', a, '| cac40:', b);
+            if (a < 450 || b < 35) { console.error('too many tickers missing'); process.exit(1); }
+          "
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "stock-updater[bot]"
+          git config user.email "noreply@stockguessr.fr"
+          git add data
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -m "Daily stock data refresh"
+          git push
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 8aa63153cec6dac52fa6cea3ad90bccd
+          command: pages deploy . --project-name stockguessr --branch main
