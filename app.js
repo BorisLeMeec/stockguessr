@@ -18,7 +18,7 @@ const STR = {
     d_veryhard: 'Very Hard', d_veryhard_desc: 'Pure chaos. Even the quants would sweat.',
     foot: 'real market data · no login · just vibes',
     daily_name: 'Daily Challenge', train_lbl: 'TRAIN',
-    daily_desc: 'Five charts. Same for everyone. One attempt — make it count.',
+    daily_desc: 'Five charts. Same for everyone. One attempt — bon chance.',
     daily_played: (s, m) => `PLAYED TODAY ✓ ${s}/${m} PTS — new charts at midnight.`,
     hints_lbl: '// HINTS',
     hint_names: { tf: 'TIMELINE', s: 'SECTOR', f: 'FOUNDED', c: 'CAP', a: 'PRICES', g: 'COUNTRY' },
