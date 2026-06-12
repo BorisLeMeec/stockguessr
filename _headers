@@ -1,0 +1,14 @@
+# Always revalidate code and data so deploys reach clients immediately.
+# ETag revalidation is a cheap 304 round-trip; the CDN still serves instantly.
+/app.js
+  Cache-Control: public, max-age=0, must-revalidate
+/style.css
+  Cache-Control: public, max-age=0, must-revalidate
+/data/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Icons and the OG image rarely change — let browsers keep them for a day.
+/favicon.svg
+  Cache-Control: public, max-age=86400
+/og.png
+  Cache-Control: public, max-age=86400
