@@ -22,9 +22,9 @@ const TF_PTS = 50;
 let roundCount = 10; // menu setting: 1 / 5 / 10 / 20
 
 const MARKETS = {
-  sp500: { dir: 'data/sp500', cur: '$' },
-  cac40: { dir: 'data/cac40', cur: '€' },
-  eurostoxx50: { dir: 'data/eurostoxx50', cur: '€' },
+  sp500: { dir: 'data/sp500', cur: '$', label: 'S&P 500' },
+  cac40: { dir: 'data/cac40', cur: '€', label: 'CAC 40' },
+  eurostoxx50: { dir: 'data/eurostoxx50', cur: '€', label: 'EURO STOXX 50' },
 };
 let market = 'sp500';         // menu setting
 const marketCache = {};       // lazy-loaded {companies, available} per market
@@ -415,7 +415,7 @@ function shareText() {
   for (let i = 0; i < game.results.length; i += 5)
     rows.push(game.results.slice(i, i + 5).map(roundEmoji).join(''));
   const grid = rows.join('\n');
-  return `STOCKGUESSR · ${game.diff.label}\n${grid}\n${game.score}/${game.max} PTS — ${$('results-grade').textContent}\nhttps://${SITE}`;
+  return `STOCKGUESSR · ${game.diff.label} · ${MARKETS[game.market].label}\n${grid}\n${game.score}/${game.max} PTS — ${$('results-grade').textContent}\nhttps://${SITE}`;
 }
 
 async function buildShareImage() {
@@ -467,7 +467,7 @@ async function buildShareImage() {
 
   ctx.font = '500 30px "IBM Plex Mono"';
   ctx.fillStyle = '#ffc24b';
-  ctx.fillText(`— ${game.diff.label} —`, S / 2, 215);
+  ctx.fillText(`— ${game.diff.label} · ${MARKETS[game.market].label} —`, S / 2, 215);
 
   ctx.font = '600 190px "IBM Plex Mono"';
   ctx.fillStyle = '#2dff8a';
