@@ -77,7 +77,7 @@ Score card PNG is drawn on a canvas in `buildShareImage()` (1080×1080, fonts vi
 
 ### Sponsor slot
 
-`SPONSOR` object in app.js + score-tiered copy in `STR[lang].sponsor` (`[minRatio, text]`, first match wins). Currently a Trade Republic referral (`refnocode.trade.re/ffxf9qx5`). `enabled: false` kills it. Link must keep `rel="sponsored"`; keep the capital-loss disclaimer (French regulator).
+`SPONSOR` object in app.js + score-tiered copy in `STR[lang].sponsor` (`[minRatio, text]`, first match wins). Currently a Trade Republic referral (`refnocode.trade.re/ffxf9qx5`). `enabled: false` kills it. Link must keep `rel="sponsored"`; keep the capital-loss disclaimer (French regulator). **DOM class/ids are deliberately neutral (`tape-card`/`tape-msg`/`tape-cta`/`tape-fine`, not `sponsor-*`)** — ad-blocker cosmetic filters (EasyList/uBlock) hide anything containing `sponsor`/`ad`/`promo`/`banner`, which silently blanked the joke line for blocker users. Don't rename them back to ad-sounding words.
 
 ## Infrastructure
 

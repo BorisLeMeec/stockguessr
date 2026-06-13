@@ -805,13 +805,13 @@ const SPONSOR = {
 };
 
 function renderSponsor() {
-  const card = $('sponsor-card');
+  const card = $('tape-card');
   card.hidden = !SPONSOR.enabled;
   if (!SPONSOR.enabled) return;
   const ratio = game.score / game.max;
-  $('sponsor-text').textContent = t('sponsor').find(([min]) => ratio >= min)[1];
-  $('sponsor-cta').textContent = t('sponsor_cta');
-  $('sponsor-disclaimer').textContent = t('sponsor_disc');
+  $('tape-msg').textContent = t('sponsor').find(([min]) => ratio >= min)[1];
+  $('tape-cta').textContent = t('sponsor_cta');
+  $('tape-fine').textContent = t('sponsor_disc');
   card.href = SPONSOR.url;
 }
 
