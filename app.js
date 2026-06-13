@@ -785,6 +785,19 @@ function trackGuess(round, okCompany, okTf) {
   } catch { /* ignore — metrics are optional */ }
 }
 
+function trackEvent(name, detail) {
+  try {
+    const body = JSON.stringify({
+      name,
+      detail: detail || null,
+      market: game.market,
+      mode: game.dailyNum ? 'daily' : game.diff?.key,
+      lang,
+    });
+    navigator.sendBeacon('/api/event', new Blob([body], { type: 'application/json' }));
+  } catch { /* ignore — metrics are optional */ }
+}
+
 function tfLabel(tf, company) {
   return tf === 'ALL' ? t('all_time')(currentData?.since ?? '—') : t('tfl')[tf];
 }
@@ -979,9 +992,11 @@ function flash(msg) {
 
 // native share sheet — mobile / supporting browsers only
 $('btn-share').addEventListener('click', async () => {
+  trackEvent('share_native');
   const file = new File([shareBlob], 'stockguessr-score.png', { type: 'image/png' });
   try {
     await navigator.share({ files: [file], title: 'STOCKGUESSR', text: shareText() });
+    trackEvent('share_native', 'shared');
     flash(t('f_shared'));
     return;
   } catch (e) {
@@ -990,21 +1005,33 @@ $('btn-share').addEventListener('click', async () => {
   // some Android browsers/webviews choke on files+text — retry with text only
   try {
     await navigator.share({ title: 'STOCKGUESSR', text: shareText() });
+    trackEvent('share_native', 'shared_text');
     flash(t('f_shared_txt'));
   } catch (e) {
     if (e.name !== 'AbortError') flash(t('f_fail')(e.name));
   }
 });
 
+$('btn-x').addEventListener('click', () => trackEvent('share_x'));
+
+// sponsor click — detail is the score band (q0=0-24% … q3=75-100%) for ad reporting
+$('tape-card').addEventListener('click', () => {
+  const band = game.max ? 'q' + Math.min(3, Math.floor((game.score / game.max) * 4)) : null;
+  trackEvent('sponsor_click', band);
+});
+
 const isTouch = matchMedia('(pointer: coarse)').matches;
 
 $('btn-copy-img').addEventListener('click', async () => {
+  trackEvent('share_copy');
   try {
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': shareBlob })]);
+    trackEvent('share_copy', 'copied');
     flash(t('f_img'));
   } catch {
     if (isTouch) {
       // blob downloads are unreliable on mobile; the native gesture works better
+      trackEvent('share_copy', 'longpress');
       flash(t('f_longpress'));
     } else {
       // browser without image clipboard (e.g. Firefox): download instead
@@ -1012,6 +1039,7 @@ $('btn-copy-img').addEventListener('click', async () => {
       a.href = $('share-img').src;
       a.download = 'stockguessr-score.png';
       a.click();
+      trackEvent('share_copy', 'downloaded');
       flash(t('f_dl'));
     }
   }

@@ -31,5 +31,50 @@ SELECT level,
        round(100.0 * avg(ok_company), 1) AS pct_correct
 FROM guesses GROUP BY level ORDER BY level;
 
+-- Plays vs wins per difficulty (a win = company right AND, when guessed, timeframe right)
+SELECT mode,
+       count(*)                                                  AS played,
+       sum(CASE WHEN ok_company = 1 AND ok_tf IS NOT 0 THEN 1 ELSE 0 END) AS won
+FROM guesses GROUP BY mode ORDER BY played DESC;
+
 -- Language split
 SELECT lang, count(*) AS guesses FROM guesses GROUP BY lang;
+
+
+-- ─────────── share-button events (table: events) ───────────
+
+-- Total share-button clicks, by button (detail IS NULL = the initial click)
+SELECT name, count(*) AS clicks
+FROM events WHERE name LIKE 'share_%' AND detail IS NULL
+GROUP BY name ORDER BY clicks DESC;
+
+-- Share clicks broken down by outcome (shared / shared_text / copied / downloaded / longpress)
+SELECT name, detail, count(*) AS n
+FROM events WHERE name LIKE 'share_%' AND detail IS NOT NULL
+GROUP BY name, detail ORDER BY name, n DESC;
+
+-- Share clicks per day, most recent first
+SELECT date(ts) AS day, count(*) AS share_clicks
+FROM events WHERE name LIKE 'share_%' AND detail IS NULL
+GROUP BY day ORDER BY day DESC LIMIT 30;
+
+
+-- ─────────── sponsor clicks (for ad reporting) ───────────
+
+-- Total sponsor clicks
+SELECT count(*) AS sponsor_clicks FROM events WHERE name = 'sponsor_click';
+
+-- Sponsor clicks per day, most recent first
+SELECT date(ts) AS day, count(*) AS sponsor_clicks
+FROM events WHERE name = 'sponsor_click'
+GROUP BY day ORDER BY day DESC LIMIT 30;
+
+-- Sponsor clicks by market and language
+SELECT market, lang, count(*) AS clicks
+FROM events WHERE name = 'sponsor_click'
+GROUP BY market, lang ORDER BY clicks DESC;
+
+-- Sponsor clicks by score band (q0=0-24% … q3=75-100%) — do good/bad scorers convert?
+SELECT detail AS score_band, count(*) AS clicks
+FROM events WHERE name = 'sponsor_click'
+GROUP BY detail ORDER BY score_band;
