@@ -28,6 +28,7 @@ const STR = {
     clues: '// CLUES', since: 'SINCE',
     rs_company: 'COMPANY', rs_tf: 'TIMEFRAME', rs_pts: 'POINTS',
     session: 'SESSION CLOSED', share: 'SHARE ↗', copy_img: 'COPY IMAGE', post_x: 'POST ON 𝕏', again: 'RUN IT BACK',
+    streak1: '🔥 STREAK STARTED', streakN: n => `🔥 ${n}-DAY STREAK`, next_daily: hms => `NEXT DAILY IN ${hms}`,
     round_word: 'ROUND',
     levels: ['EASY', 'MEDIUM', 'HARD'],
     diffs: { easy: 'EASY', medium: 'MEDIUM', hard: 'HARD', veryhard: 'VERY HARD' },
@@ -73,6 +74,7 @@ const STR = {
     clues: '// INDICES', since: 'DEPUIS',
     rs_company: 'SOCIÉTÉ', rs_tf: 'TIMELINE', rs_pts: 'POINTS',
     session: 'SÉANCE TERMINÉE', share: 'PARTAGER ↗', copy_img: "COPIER L'IMAGE", post_x: 'POSTER SUR 𝕏', again: 'ON REMET ÇA',
+    streak1: '🔥 SÉRIE LANCÉE', streakN: n => `🔥 SÉRIE DE ${n} JOURS`, next_daily: hms => `PROCHAIN DÉFI DANS ${hms}`,
     round_word: 'MANCHE',
     levels: ['FACILE', 'MOYEN', 'DIFFICILE'],
     diffs: { easy: 'FACILE', medium: 'MOYEN', hard: 'DIFFICILE', veryhard: 'TRÈS DIFFICILE' },
@@ -192,6 +194,13 @@ function currentStreak() {
   if (!s) return 0;
   const y = new Date(); y.setDate(y.getDate() - 1);
   return s.date === todayStr() || s.date === dateStr(y) ? s.count : 0; // dead streaks show nothing
+}
+// time until the player's local midnight, when the next daily unlocks
+function nextDailyHMS() {
+  const d = new Date();
+  const ms = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1) - d;
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return [s / 3600, (s % 3600) / 60, s % 60].map(n => String(Math.floor(n)).padStart(2, '0')).join(':');
 }
 
 function dailyRecord() {
@@ -788,14 +797,22 @@ function renderSponsor() {
 }
 
 /* ─────────── results ─────────── */
+let countdownTimer = null;
 function showResults() {
   show('screen-results');
+  clearInterval(countdownTimer);
+  $('daily-next').hidden = !game.dailyNum;
   if (game.dailyNum) {
     localStorage.setItem(`sg_daily_${game.market}`,
       JSON.stringify({ date: todayStr(), num: game.dailyNum, score: game.score, max: game.max }));
     localStorage.removeItem(`sg_daily_run_${game.market}`);
     bumpStreak();
     renderDailyCard();
+    const st = currentStreak();
+    $('dn-streak').textContent = st > 1 ? t('streakN')(st) : t('streak1');
+    const tick = () => $('dn-count').textContent = t('next_daily')(nextDailyHMS());
+    tick();
+    countdownTimer = setInterval(tick, 1000);
   }
   const ratio = game.score / game.max;
   $('results-grade').textContent = t('grades').find(([min]) => ratio >= min)[1];
@@ -814,7 +831,7 @@ function showResults() {
   prepareShare();
 }
 
-$('btn-again').addEventListener('click', () => show('screen-menu'));
+$('btn-again').addEventListener('click', () => { clearInterval(countdownTimer); show('screen-menu'); });
 
 /* ─────────── share ─────────── */
 const SITE = 'stockguessr.fr';

@@ -19,10 +19,12 @@ node scripts/eurostoxx50.mjs           # EURO STOXX 50 list (hand-curated)
 node scripts/fetch-data.mjs <market>   # price history per ticker (resumable; delete data/<market>/stocks/ first for full refresh)
 node scripts/fetch-caps.mjs            # live market caps for ALL markets + re-sorts lists by cap
 
-# Deploy (push to main auto-deploys via GitHub Action; manual:)
-rtk proxy npx -y wrangler pages deploy . --project-name stockguessr --branch main --commit-dirty=true
-# ALWAYS verify after deploying — one deploy silently failed once:
-curl -s "https://stockguessr.fr/?v=$RANDOM" | grep -c "<some new string>"
+# Deploy: ONLY ever by pushing to main — the GitHub Action deploys.
+# NEVER run `wrangler pages deploy` yourself. Just commit + push and let CI handle it.
+rtk git add -A && rtk git commit -m "msg" && rtk git push
+# After CI runs, verify it actually landed (one deploy silently failed once) —
+# use `rtk proxy curl` (plain curl is rewritten to `rtk curl`, which mangles the body):
+rtk proxy curl -s "https://stockguessr.fr/?v=$RANDOM" | grep -c "<some new string>"
 ```
 
 There is no test suite. Verification is done ad-hoc with Playwright: `npm i playwright --no-save` (browsers already cached in ~/Library/Caches/ms-playwright), drive a full game headlessly, then `rm -rf node_modules package.json package-lock.json` — never commit these.

@@ -392,6 +392,20 @@ body {
 }
 .results-score .rs-max { font-size: .35em; color: var(--dim); text-shadow: none; font-weight: 400; }
 
+/* daily-only: streak earned + countdown to the next drop */
+.daily-next {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  margin: -18px 0 32px; animation: cardIn .5s ease backwards;
+}
+.dn-streak {
+  font-size: 13px; font-weight: 600; letter-spacing: .12em; color: var(--amber);
+  text-shadow: 0 0 20px rgba(255,194,75,.4);
+}
+.dn-count {
+  font-size: 11px; letter-spacing: .22em; color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
 .results-list { list-style: none; text-align: left; border: 1px solid var(--line); margin-top: 32px; }
 .results-list li {
   display: flex; align-items: center; gap: 14px;
@@ -419,7 +433,6 @@ body {
 .share-box .sponsor-card { align-self: stretch; }
 .sponsor-card[hidden] { display: none; }
 .sponsor-card:hover { border-color: var(--amber); background: rgba(255,194,75,.07); }
-.sponsor-tag { font-size: 9px; letter-spacing: .24em; color: #8a7a4d; }
 .sponsor-text { font-size: 13px; color: var(--txt); flex: 1; min-width: 200px; }
 .sponsor-cta { font-size: 12px; letter-spacing: .1em; color: var(--amber); white-space: nowrap; }
 .sponsor-card:hover .sponsor-cta { text-shadow: 0 0 12px rgba(255,194,75,.5); }
