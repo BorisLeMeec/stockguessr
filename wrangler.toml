@@ -1,0 +1,12 @@
+# Cloudflare Pages config — bindings for the Pages Functions in ./functions
+# (the site itself is still plain static files; only /api/* runs server-side).
+# wrangler excludes this file and ./functions from the uploaded static assets.
+name = "stockguessr"
+pages_build_output_dir = "."
+compatibility_date = "2026-06-13"
+
+# Metrics DB (region WEUR). Bound as env.DB inside functions/api/track.js.
+[[d1_databases]]
+binding = "DB"
+database_name = "stockguessr-metrics"
+database_id = "4156499f-3916-4951-8919-630f3efafaba"

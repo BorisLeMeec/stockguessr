@@ -17,4 +17,6 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: 8aa63153cec6dac52fa6cea3ad90bccd
-          command: pages deploy . --project-name stockguessr --branch main
+          # No positional dir: it comes from pages_build_output_dir in wrangler.toml,
+          # which also carries the D1 binding for functions/api/track.js.
+          command: pages deploy --project-name stockguessr --branch main

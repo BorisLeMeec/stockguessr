@@ -740,6 +740,7 @@ function submitGuess() {
   const pts = Math.max(0, base - hints.spent);
   game.score += pts;
   game.results.push({ round, okCompany, okTf, pts });
+  trackGuess(round, okCompany, okTf);
   if (game.dailyNum) { hints.bought = []; saveDailyRun(); } // verdict is final — a refresh resumes past it
 
   $('hud-score').textContent = `${game.score} PTS`;
@@ -764,6 +765,24 @@ function submitGuess() {
   $('reveal-panel').hidden = false;
   $('btn-next').textContent = game.idx === game.rounds.length - 1 ? t('see_results') : t('next');
   $('btn-next').focus();
+}
+
+/* ─────────── metrics (best-effort) ───────────
+   One row per validate click → Pages Function → D1. Fire-and-forget: a failed
+   beacon never affects gameplay, and no PII is sent (just the guess context). */
+function trackGuess(round, okCompany, okTf) {
+  try {
+    const body = JSON.stringify({
+      market: game.market,
+      mode: game.dailyNum ? 'daily' : game.diff.key,
+      dailyNum: game.dailyNum || null,
+      level: round.lvl,
+      okCompany,
+      okTf,
+      lang,
+    });
+    navigator.sendBeacon('/api/track', new Blob([body], { type: 'application/json' }));
+  } catch { /* ignore — metrics are optional */ }
 }
 
 function tfLabel(tf, company) {
